@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG — Median style, v1.0 + voiceover</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#000;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}
+  .wrap{max-width:820px;margin:0 auto;padding:16px}
+  h1{font-size:16px;margin:4px 0 2px;font-weight:600;color:#fff}
+  h1 span{color:#9A9A9A}
+  .sub{color:#9A9A9A;font-size:12px;margin:0 0 12px;line-height:1.5}
+  .stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
+  svg{width:100%;height:100%;display:block}
+  .scene{display:none}
+  .scene.active{display:block}
+  .eyebrow{font-size:12px;letter-spacing:.28em;fill:#9A9A9A;font-weight:600}
+  .head{font-size:26px;font-weight:700;fill:#fff}
+  .math{font-family:"Times New Roman",Georgia,serif;fill:#fff}
+  .mathI{font-family:"Times New Roman",Georgia,serif;font-style:italic;fill:#fff}
+  .grey{fill:#9A9A9A}
+  .dim{opacity:.28}
+  .blue{fill:#7E9BFF}.green{fill:#6FCF97}
+  .blueS{stroke:#7E9BFF}.greenS{stroke:#6FCF97}
+  .thin{stroke:#fff;stroke-width:1.5;fill:none}
+  .thinG{stroke:#9A9A9A;stroke-width:1.5;fill:none}
+  .fillChar{fill:#1A1A1A}
+  .fillSlate{fill:#3A4A5A}
+  .fillBlue{fill:#5F7FA8}
+  .mark{font-size:12px;fill:#9A9A9A}
+  /* Median motion: no camera moves. Slow fade, line draws, shape grows. One element at a time. */
+  .active .f1{animation:fade 1.4s ease-out both}
+  .active .f2{animation:fade 1.4s 1.2s ease-out both}
+  .active .f3{animation:fade 1.4s 2.4s ease-out both}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .active .draw{stroke-dasharray:600;stroke-dashoffset:600;animation:draw 1.6s .3s ease-out forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .active .grow{animation:grow 1.6s .6s ease-out both;transform-origin:center;transform-box:fill-box}
+  @keyframes grow{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
+  .active .blurIn{animation:blurIn 1.6s ease-out both}
+  @keyframes blurIn{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+  .caption{min-height:54px;padding:12px 2px 0;font-size:16px;line-height:1.55;color:#fff}
+  .caption b{color:#fff}
+  .caption .b{color:#7E9BFF}.caption .g{color:#6FCF97}
+  .controls{display:flex;gap:12px;align-items:center;margin-top:10px}
+  button{background:none;border:1px solid #555;color:#fff;border-radius:999px;padding:8px 16px;cursor:pointer;font-size:14px}
+  button:hover{border-color:#fff}
+  .progress{flex:1;height:2px;background:#222;cursor:pointer}
+  .progress i{display:block;height:100%;background:#fff;width:0%}
+  .time{font-size:12px;color:#9A9A9A;min-width:80px;text-align:right}
+  .note{font-size:12px;color:#9A9A9A;margin-top:14px;line-height:1.6}
+  .note b{color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>RAG hoạt động như thế nào? <span>— Median style, v1.0</span></h1>
+  <p class="sub">Làm đúng bảng phong cách Median đã xem trực tiếp trên kênh: nền đen #000, 1 vật thể ở giữa, serif toán + sans tiêu đề, 2 màu nhấn duy nhất, nhịp chậm 5–10 giây / 1 hình.</p>
+
+  <div class="stage">
+  <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+    <!-- 1 HOOK: ? trong 2 vòng tròn, như Median 0:00-0:07 -->
+    <g class="scene" id="s1">
+      <circle cx="400" cy="200" r="110" fill="none" stroke="#9A9A9A" stroke-width="1.5"/>
+      <circle cx="400" cy="200" r="78" fill="none" stroke="#9A9A9A" stroke-width="1.5"/>
+      <line x1="400" y1="60" x2="400" y2="340" stroke="#9A9A9A" stroke-width="1.5"/>
+      <text x="372" y="235" font-size="96" class="math">?</text>
+      <text x="400" y="410" font-size="22" text-anchor="middle" class="math">AI trả lời sai, vì sao?</text>
+      <text x="770" y="430" text-anchor="end" class="mark">rag — 01</text>
+    </g>
+    <!-- 2 MACHINE: hình chữ nhật mỏng, f ở giữa, như Median 0:40 -->
+    <g class="scene" id="s2">
+      <text x="40" y="48" class="eyebrow">PHẦN 1 — CÁI MÁY</text>
+      <rect x="300" y="150" width="200" height="120" class="thin"/>
+      <text x="385" y="235" font-size="72" class="mathI">f</text>
+      <text x="120" y="215" font-size="20" class="mathI">x</text>
+      <line x1="170" y1="210" x2="300" y2="210" class="thinG"/>
+      <text x="540" y="215" font-size="20" class="math">?</text>
+      <line x1="500" y1="210" x2="530" y2="210" class="thinG"/>
+      <text x="400" y="340" font-size="18" text-anchor="middle" class="grey">Đưa vào một câu hỏi, cái máy trả ra một câu trả lời.</text>
+      <text x="770" y="430" text-anchor="end" class="mark">rag — 01</text>
+    </g>
+    <!-- 3 GUESS: máy trả ra 3 đáp án mờ, không chắc -->
+    <g class="scene" id="s3">
+      <text x="40" y="48" class="eyebrow">PHẦN 1 — CÁI MÁY</text>
+      <text x="400" y="140" font-size="28" text-anchor="middle" class="math">Doanh thu quý 3 là bao nhiêu?</text>
+      <g class="f1 dim"><text x="400" y="230" font-size="40" text-anchor="middle" class="math">42 tỷ</text></g>
+      <g class="f2 dim"><text x="400" y="285" font-size="40" text-anchor="middle" class="math">50 tỷ</text></g>
+      <g class="f3 dim"><text x="400" y="340" font-size="40" text-anchor="middle" class="math">100 tỷ</text></g>
+      <text x="400" y="410" font-size="16" text-anchor="middle" class="grey">Không có tài liệu, máy chỉ còn cách đoán.</text>
+      <text x="770" y="430" text-anchor="end" class="mark">rag — 01</text>
+    </g>
+    <!-- 4 CHUNK: 1 đoạn thẳng chia thành các đoạn bằng nhau, như đường số 0-1 -->
+    <g class="scene" id="s4">
+      <text x="40" y="48" class="eyebrow">PHẦN 2 — CHIA NHỎ</text>
+      <line x1="100" y1="220" x2="700" y2="220" class="thin draw"/>
+      <g class="f2">
+        <line x1="100" y1="205" x2="100" y2="235" class="thin"/><line x1="250" y1="205" x2="250" y2="235" class="thin"/><line x1="400" y1="205" x2="400" y2="235" class="thin"/><line x1="550" y1="205" x2="550" y2="235" class="thin"/><line x1="700" y1="205" x2="700" y2="235" class="thin"/>
+      </g>
+      <text x="100" y="270" font-size="16" class="grey">0</text>
+      <text x="680" y="270" font-size="16" class="grey">tài liệu</text>
+      <text x="400" y="340" font-size="20" text-anchor="middle" class="math">mỗi mảnh ≈ 500 ký tự</text>
+      <text x="770" y="430" text-anchor="end" class="mark">rag — 01</text>
+    </g>
+    <!-- 5 EMBEDDING: mặt phẳng điểm, cụm, query xanh mint -->
+    <g class="scene" id="s5">
+      <text x="40" y="48" class="eyebrow">PHẦN 2 — ĐIỂM TRÊN MẶT PHẲNG</text>
+      <line x1="80" y1="360" x2="720" y2="360" class="thinG"/>
+      <line x1="80" y1="360" x2="80" y2="90" class="thinG"/>
+      <g class="f1" fill="#fff">
+        <circle cx="200" cy="250" r="5"/><circle cx="230" cy="280" r="5"/><circle cx="175" cy="285" r="5"/>
+        <circle cx="560" cy="180" r="5"/><circle cx="590" cy="210" r="5"/><circle cx="535" cy="215" r="5"/>
+      </g>
+      <g class="f2"><circle cx="400" cy="200" r="9" class="green"/><text x="418" y="205" font-size="18" class="green">câu hỏi</text></g>
+      <text x="400" y="410" font-size="16" text-anchor="middle" class="grey">Mảnh nào giống nhau thì đứng gần nhau.</text>
+      <text x="770" y="430" text-anchor="end" class="mark">rag — 01</text>
+    </g>
+    <!-- 6 RETRIEVAL: spotlight — top 3 sáng trắng/xanh, còn lại mờ xám -->
+    <g class="scene" id="s6">
+      <text x="40" y="48" class="eyebrow">PHẦN 2 — TÌM</text>
+      <circle cx="400" cy="130" r="10" class="green"/>
+      <g class="dim" fill="#9A9A9A"><circle cx="180" cy="280" r="5"/><circle cx="620" cy="280" r="5"/><circle cx="300" cy="320" r="5"/><circle cx="520" cy="320" r="5"/></g>
+      <g class="f2">
+        <line x1="400" y1="140" x2="260" y2="260" class="blueS" stroke-width="1.5"/>
+        <line x1="400" y1="140" x2="400" y2="260" class="blueS" stroke-width="1.5"/>
+        <line x1="400" y1="140" x2="540" y2="260" class="blueS" stroke-width="1.5"/>
+        <circle cx="260" cy="270" r="8" class="blue"/><circle cx="400" cy="270" r="8" class="blue"/><circle cx="540" cy="270" r="8" class="blue"/>
+        <text x="250" y="305" font-size="16" class="blue">1</text><text x="390" y="305" font-size="16" class="blue">2</text><text x="530" y="305" font-size="16" class="blue">3</text>
+      </g>
+      <rect x="620" y="40" width="140" height="36" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <text x="690" y="64" font-size="16" text-anchor="middle" class="math">top 3</text>
+      <text x="770" y="430" text-anchor="end" class="mark">rag — 01</text>
+    </g>
+    <!-- 7 GENERATION: diện tích mới xuất hiện thành dải, như hình vuông x² của Median -->
+    <g class="scene" id="s7">
+      <text x="40" y="48" class="eyebrow">PHẦN 3 — ĐỌC RỒI TRẢ LỜI</text>
+      <rect x="220" y="120" width="180" height="180" class="thin fillChar"/>
+      <g class="f2"><rect x="400" y="120" width="46" height="180" class="fillBlue"/><rect x="220" y="300" width="180" height="46" class="fillSlate"/><rect x="400" y="300" width="46" height="46" fill="#222"/></g>
+      <text x="310" y="215" font-size="18" class="grey">3 mảnh</text>
+      <text x="400" y="390" font-size="22" text-anchor="middle" class="math">Doanh thu quý 3 là 42 tỷ. <tspan class="blue">[1] [2] [3]</tspan></text>
+      <rect x="620" y="40" width="140" height="36" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <text x="690" y="64" font-size="15" text-anchor="middle" class="math">có trích dẫn</text>
+      <text x="770" y="430" text-anchor="end" class="mark">rag — 01</text>
+    </g>
+    <!-- 8 NO DOC: khung đen gần như trống, giữ lâu -->
+    <g class="scene" id="s8">
+      <text x="40" y="48" class="eyebrow">PHẦN 3 — KHÔNG CÓ TÀI LIỆU</text>
+      <text x="400" y="220" font-size="30" text-anchor="middle" class="math blurIn">Mình không tìm thấy trong tài liệu.</text>
+      <text x="400" y="270" font-size="18" text-anchor="middle" class="grey">Không bịa nữa.</text>
+      <text x="770" y="430" text-anchor="end" class="mark">rag — 01</text>
+    </g>
+    <!-- 9 RECAP: công thức lớn ở giữa, như Median -->
+    <g class="scene" id="s9">
+      <text x="40" y="48" class="eyebrow">TÓM LẠI</text>
+      <text x="400" y="210" font-size="52" text-anchor="middle" class="math">RAG = Tìm + Đọc + Trả lời</text>
+      <text x="400" y="270" font-size="18" text-anchor="middle" class="grey">Retrieve — Generate, với tài liệu thật.</text>
+      <rect x="600" y="40" width="160" height="36" fill="none" stroke="#fff" stroke-width="1.5"/>
+      <text x="680" y="64" font-size="15" text-anchor="middle" class="math">tìm → đọc → trả lời</text>
+      <text x="770" y="430" text-anchor="end" class="mark">rag — 01</text>
+    </g>
+  </svg>
+  </div>
+
+  <audio id="vo" src="rag-video-01-audio/rag-video-01-full-audio-museA.mp3" preload="auto"></audio>
+  <div class="caption" id="caption"></div>
+  <div class="controls">
+    <button id="playBtn">Phát</button>
+    <button id="restartBtn">Xem lại</button>
+    <div class="progress" id="progress"><i id="bar"></i></div>
+    <div class="time" id="time">0:00 / 1:00</div>
+  </div>
+  <p class="note"><b>Bảng phong cách Median đã kiểm chứng trực tiếp trên kênh:</b> nền đen #000, không gradient, không 3D, không camera move; 1 vật thể ở giữa, khoảng trống lớn; serif toán trắng cỡ lớn + sans tiêu đề, eyebrow xám “PHẦN 1”; chỉ 2 màu nhấn có ý nghĩa — xanh periwinkle <b style="color:#7E9BFF">#7E9BFF</b> cho phần lấy ra, xanh mint <b style="color:#6FCF97">#6FCF97</b> cho câu hỏi; chuyển động chỉ là fade, vẽ đường, hình mọc ra, 1 yếu tố mỗi lần, nhịp 5–10 giây / 1 hình, giữ lâu sau câu hỏi. Logo “median” góc dưới phải trong video gốc được thay bằng “rag — 01” để không giả mạo kênh họ. Thumbnail họ dùng khối 3D phát sáng, nhưng trong video 0:00–2:30 đã xem thì <b>không có</b> khối 3D, không xúc xắc, không nổ tung — nên bản này cũng không thêm.</p>
+</div>
+<script>
+const scenes=[
+ {t0:0.8,  dur:6.888, cap:"<b>AI trả lời sai, không phải vì nó dốt.</b> Mà vì nó đang thi, mà không được mang tài liệu."},
+ {t0:9.688, dur:5.184, cap:"Hàm số là một cái máy. Đưa <span class='g'>x</span> vào, máy trả ra <span class='b'>f(x)</span>."},
+ {t0:16.072, dur:6.216, cap:"Hỏi nó <b>doanh thu quý 3</b>, không có tài liệu, máy chỉ còn cách đoán."},
+ {t0:23.488, dur:6.072, cap:"Đầu tiên, cắt tài liệu thành từng mảnh nhỏ, mỗi mảnh khoảng <b>500 ký tự</b>."},
+ {t0:30.76, dur:4.752, cap:"Rồi biến mỗi mảnh thành một điểm, mảnh nào giống nhau thì <b>đứng gần nhau</b>."},
+ {t0:36.712, dur:4.08, cap:"Câu hỏi cũng thành một điểm, rồi tìm <span class='b'>3 mảnh gần nhất</span>."},
+ {t0:41.992, dur:4.872, cap:"Đưa 3 mảnh đó cho máy đọc rồi mới trả lời, kèm <span class='b'>nguồn trích dẫn</span>."},
+ {t0:48.064, dur:4.296, cap:"Không có tài liệu thì nó <b>nói không biết</b>, chứ không bịa nữa."},
+ {t0:53.86, dur:5.064, cap:"Đó là RAG: <b>tìm trước, đọc rồi, mới trả lời</b>."}
+];
+const TOTAL=60.424;
+let elapsed=0, playing=false, timer=null;
+const capEl=document.getElementById('caption'), bar=document.getElementById('bar'), timeEl=document.getElementById('time'), playBtn=document.getElementById('playBtn');
+function fmt(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function showScene(i){
+  scenes.forEach((s,j)=>{
+    const el=document.getElementById('s'+(j+1));
+    const on=j===i;
+    if(on && !el.classList.contains('active')){ el.classList.remove('active'); void el.offsetWidth; el.classList.add('active'); }
+    if(!on) el.classList.remove('active');
+  });
+  capEl.innerHTML=scenes[i].cap;
+}
+function tick(){
+  elapsed+=0.1;
+  if(elapsed>=TOTAL){ pause(); elapsed=TOTAL; }
+  const idx=scenes.findIndex((s,i)=> elapsed>=s.t0 && elapsed < s.t0+s.dur);
+  if(idx>=0) showScene(idx); // khoảng nghỉ: giữ cảnh cũ, không nhảy sang cảnh cuối
+  bar.style.width=(elapsed/TOTAL*100)+'%';
+  timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL);
+}
+function play(){ if(elapsed>=TOTAL) elapsed=0; playing=true; playBtn.textContent='Tạm dừng'; timer=setInterval(tick,100); const a=document.getElementById('vo'); if(a){ a.currentTime=elapsed; a.play().catch(()=>{}); } }
+function pause(){ playing=false; playBtn.textContent='Phát'; clearInterval(timer); const a=document.getElementById('vo'); if(a) a.pause(); }
+function goTo(t){ elapsed=t; const a=document.getElementById('vo'); if(a){ a.currentTime=t; if(playing) a.play().catch(()=>{}); } const i=scenes.findIndex((s)=> t>=s.t0 && t < s.t0+s.dur); showScene(i<0?0:i); bar.style.width=(elapsed/TOTAL*100)+'%'; timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL); }
+playBtn.onclick=()=> playing?pause():play();
+document.getElementById('restartBtn').onclick=()=>{ goTo(0); play(); };
+document.getElementById('progress').onclick=function(e){ const r=this.getBoundingClientRect(); goTo((e.clientX-r.left)/r.width*TOTAL); };
+showScene(0);
+</script>
+</body>
+</html>

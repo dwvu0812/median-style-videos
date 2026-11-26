@@ -1,0 +1,9 @@
+AI trả lời sai, không phải vì nó dốt. Mà vì nó đang thi, mà không được mang tài liệu.
+Hàm số là một cái máy. Đưa x vào, máy trả ra f(x).
+Hỏi nó doanh thu quý 3, không có tài liệu, máy chỉ còn cách đoán.
+Đầu tiên, cắt tài liệu thành từng mảnh nhỏ, mỗi mảnh khoảng 500 ký tự.
+Rồi biến mỗi mảnh thành một điểm, mảnh nào giống nhau thì đứng gần nhau.
+Câu hỏi cũng thành một điểm, rồi tìm 3 mảnh gần nhất.
+Đưa 3 mảnh đó cho máy đọc rồi mới trả lời, kèm nguồn trích dẫn.
+Không có tài liệu thì nó nói không biết, chứ không bịa nữa.
+Đó là RAG: tìm trước, đọc rồi, mới trả lời.
