@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TÊN VIDEO — Median style, v1.0 + voiceover</title>
+<title>TÊN VIDEO — Median style, v2.1 + voiceover</title>
 <style>
   *{box-sizing:border-box}
   body{margin:0;background:#000;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}
@@ -13,9 +13,16 @@
   .sub{color:#9A9A9A;font-size:12px;margin:0 0 12px;line-height:1.5}
   .stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
   svg{width:100%;height:100%;display:block}
-  /* SMOOTH TRANSITIONS (fix from video 01): scenes stack, crossfade 0.5s, never display:none */
-  .scene{display:block;opacity:0;transition:opacity .5s ease;pointer-events:none}
-  .scene.active{opacity:1;pointer-events:auto}
+  /* v2.1 MOTION POLISH — Median motion language: slow blur-in entrances,
+     lines drawing on slowly, shapes growing slowly. One element at a time,
+     in sync with one spoken sentence, a beat of stillness after a question.
+     Crossfade 0.9s with a blur dissolve (outgoing scene blurs as it fades).
+     At most 2 things moving at once per scene. Constant-speed rotation
+     (orbits, clock hands) stays linear — physics; everything else eases.
+     (Trước v2.1: crossfade chỉ 0.5s opacity, vào hình kiểu slam — user chê
+     chưa giống Median. Xem WORKFLOW.md §3.) */
+  .scene{display:block;opacity:0;transition:opacity .9s ease,filter .9s ease;pointer-events:none;filter:blur(6px)}
+  .scene.active{opacity:1;filter:blur(0);pointer-events:auto}
   .eyebrow{font-size:12px;letter-spacing:.28em;fill:#9A9A9A;font-weight:600}
   .head{font-size:26px;font-weight:700;fill:#fff}
   .math{font-family:"Times New Roman",Georgia,serif;fill:#fff}
@@ -30,17 +37,50 @@
   .fillSlate{fill:#3A4A5A}
   .fillBlue{fill:#5F7FA8}
   .mark{font-size:12px;fill:#9A9A9A}
-  /* Median motion: no camera moves. Slow fade, line draws, shape grows. One element at a time. ease-in-out for smoothness. */
-  .active .f1{animation:fade 1.4s ease-in-out both}
-  .active .f2{animation:fade 1.4s 1.2s ease-in-out both}
-  .active .f3{animation:fade 1.4s 2.4s ease-in-out both}
-  @keyframes fade{from{opacity:0}to{opacity:1}}
-  .active .draw{stroke-dasharray:600;stroke-dashoffset:600;animation:draw 1.6s .3s ease-in-out forwards}
+  /* Entrances: slow blur-in + fade, 1.8s, ease-out cubic-bezier(0.22,1,0.36,1).
+     One element at a time: f1 at 0s, f2 at 1.4s, f3 at 2.8s. Nothing pops. */
+  .active .f1{animation:blurFade 1.8s cubic-bezier(.22,1,.36,1) both}
+  .active .f2{animation:blurFade 1.8s 1.4s cubic-bezier(.22,1,.36,1) both}
+  .active .f3{animation:blurFade 1.8s 2.8s cubic-bezier(.22,1,.36,1) both}
+  @keyframes blurFade{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+  .active .blurIn{animation:blurFade 1.8s cubic-bezier(.22,1,.36,1) both}
+  /* Line drawing: 2.5s, ease-in-out. Uses pathLength="100" on the element,
+     so dasharray 100 always means the full length, whatever the shape. */
+  .active .draw{stroke-dasharray:100;stroke-dashoffset:100;animation:draw 2.5s .3s ease-in-out forwards}
   @keyframes draw{to{stroke-dashoffset:0}}
-  .active .grow{animation:grow 1.6s .6s ease-in-out both;transform-origin:center;transform-box:fill-box}
+  .active .grow{animation:grow 2s .6s cubic-bezier(.22,1,.36,1) both;transform-origin:center;transform-box:fill-box}
   @keyframes grow{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
-  .active .blurIn{animation:blurIn 1.6s ease-in-out both}
-  @keyframes blurIn{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+  /* Big moments ARRIVE smoothly (never slam): slow ease-out scale from 1.06
+     + blur, 1.8s. Delay follows the f1/f2/f3 stagger. */
+  @keyframes arriveIn{from{opacity:0;transform:scale(1.06);filter:blur(6px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+  .active .arrive{animation:arriveIn 1.8s cubic-bezier(.22,1,.36,1) both;transform-box:fill-box;transform-origin:center}
+  .active .f1.arrive{animation-delay:0s}
+  .active .f2.arrive{animation-delay:1.4s}
+  .active .f3.arrive{animation-delay:2.8s}
+  /* Continuous motion: gentle breathing, not throbbing. Loops slowed to
+     5–6s, smaller amplitude, ease-in-out. Orbits + clock hands stay linear. */
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes driftX{0%,100%{transform:translateX(0)}50%{transform:translateX(10px)}}
+  @keyframes driftXsm{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+  @keyframes bobY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.03);opacity:.92}}
+  @keyframes pulseOp{0%,100%{opacity:.45}50%{opacity:1}}
+  @keyframes dashFlow{0%{stroke-dashoffset:0}50%{stroke-dashoffset:-60}100%{stroke-dashoffset:-120}}
+  @keyframes growLoop{0%{transform:scaleX(0);opacity:0}12%{opacity:1}65%{transform:scaleX(1);opacity:1}85%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+  @keyframes sway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+  .active .orbit{animation:spin 26s linear infinite}
+  .active .orbitFast{animation:spin 12s linear infinite}
+  .active .tickhand{animation:spin 12s linear infinite}
+  .active .tickhandSlow{animation:spin 24s linear infinite}
+  .active .tickhandFast{animation:spin 6s linear infinite}
+  .active .drift{animation:driftX 6s ease-in-out infinite}
+  .active .driftSm{animation:driftXsm 6s ease-in-out infinite}
+  .active .bob{animation:bobY 6s ease-in-out infinite}
+  .active .breathe{animation:breathe 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  .active .pulse{animation:pulseOp 5s ease-in-out infinite}
+  .active .flow{animation:dashFlow 3s ease-in-out infinite}
+  .active .growloop{animation:growLoop 6s ease-in-out infinite;transform-box:fill-box;transform-origin:left center}
+  .active .sway{animation:sway 8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
   .caption{min-height:54px;padding:12px 2px 0;font-size:16px;line-height:1.55;color:#fff;transition:opacity .18s ease}
   .caption b{color:#fff}
   .caption .b{color:#7E9BFF}.caption .g{color:#6FCF97}
@@ -56,29 +96,35 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Tên video? <span>— Median style, v1.0</span></h1>
-  <p class="sub">TEMPLATE — copy file này thành videos/NN-ten/animation.html rồi thay 9 cảnh SVG + mảng scenes[] bên dưới. Xem WORKFLOW.md bước 2.</p>
+  <h1>Tên video? <span>— Median style, v2.1</span></h1>
+  <p class="sub">TEMPLATE — copy file này thành videos/NN-ten/animation.html rồi thay các cảnh SVG + mảng scenes[] bên dưới. Video ngắn: 9 cảnh. Video dài: ~38 cảnh, 8 chương. Xem WORKFLOW.md bước 2 và §2b.</p>
 
   <div class="stage">
   <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
-    <!-- VÍ DỤ cảnh 1 — HOOK: thay bằng 9 cảnh của bạn, giữ id s1..s9 -->
+    <!-- VÍ DỤ cảnh 1 — HOOK: thay bằng cảnh của bạn, giữ id s1, s2, ... theo thứ tự.
+         Dùng class f1/f2/f3 cho từng yếu tố xuất hiện lần lượt (0s / 1.4s / 2.8s),
+         arrive cho khoảnh khắc lớn, draw (+ pathLength="100") cho đường vẽ dần. -->
     <g class="scene" id="s1">
-      <circle cx="400" cy="200" r="110" fill="none" stroke="#9A9A9A" stroke-width="1.5"/>
-      <circle cx="400" cy="200" r="78" fill="none" stroke="#9A9A9A" stroke-width="1.5"/>
-      <text x="372" y="235" font-size="96" class="math">?</text>
-      <text x="400" y="340" font-size="20" text-anchor="middle" class="grey">Câu hỏi hook ở đây.</text>
+      <g class="f1"><circle cx="400" cy="200" r="110" fill="none" stroke="#9A9A9A" stroke-width="1.5"/>
+      <circle cx="400" cy="200" r="78" fill="none" stroke="#9A9A9A" stroke-width="1.5"/></g>
+      <g class="f2 arrive"><text x="400" y="235" font-size="96" text-anchor="middle" class="math">?</text></g>
+      <g class="f3"><text x="400" y="340" font-size="20" text-anchor="middle" class="grey">Câu hỏi hook ở đây.</text></g>
       <text x="770" y="430" text-anchor="end" class="mark">ten-video — 0N</text>
     </g>
-    <!-- VÍ DỤ cảnh 2 — thêm s2..s9 tương tự -->
+    <!-- VÍ DỤ cảnh 2 — thêm s3, s4, ... tương tự. Cảnh này demo draw + growloop. -->
     <g class="scene" id="s2">
       <text x="40" y="48" class="eyebrow">PHẦN 1 — TIÊU ĐỀ PHẦN</text>
-      <text x="400" y="210" font-size="30" text-anchor="middle" class="math">Một ý duy nhất ở đây</text>
-      <text x="400" y="270" font-size="18" text-anchor="middle" class="grey">Chữ giải thích nhỏ, màu xám.</text>
+      <g class="f1 arrive"><text x="400" y="210" font-size="30" text-anchor="middle" class="math">Một ý duy nhất ở đây</text></g>
+      <g class="f2"><line x1="250" y1="240" x2="550" y2="240" class="thin draw" pathLength="100"/></g>
+      <g class="f3"><text x="400" y="290" font-size="18" text-anchor="middle" class="grey">Chữ giải thích nhỏ, màu xám.</text></g>
       <text x="770" y="430" text-anchor="end" class="mark">ten-video — 0N</text>
     </g>
+    <!-- THÊM CẢNH TẠI ĐÂY: copy một nhóm <g class="scene" id="sN">, đánh số tiếp,
+         mỗi cảnh 1 ý, tối đa 2 thứ chuyển động cùng lúc. -->
   </svg>
   </div>
 
+  <!-- ĐỔI src thành bản mix của video này (vd: audio-full.mp3 trong thư mục video). -->
   <audio id="vo" src="audio-full.mp3" preload="auto"></audio>
   <div class="caption" id="caption"></div>
   <div class="controls">
@@ -87,13 +133,14 @@
     <div class="progress" id="progress"><i id="bar"></i></div>
     <div class="time" id="time">0:00 / 1:00</div>
   </div>
-  <p class="note"><b>Video 02 — Embedding là gì?</b> Chuyển cảnh crossfade 0.5s, easing ease-in-out — mượt hơn video 01 (vốn cắt cứng giữa các cảnh). Bảng phong cách Median đã kiểm chứng: nền đen #000, 1 vật thể ở giữa, serif toán trắng cỡ lớn + sans tiêu đề, chỉ 2 màu nhấn có ý nghĩa — xanh periwinkle <b style="color:#7E9BFF">#7E9BFF</b> cho điểm được chọn, xanh mint <b style="color:#6FCF97">#6FCF97</b> cho câu hỏi.</p>
+  <p class="note"><b>Motion v2.1 — Median motion language.</b> Vào hình blur-in chậm 1.8s (cubic-bezier(0.22,1,0.36,1)), đường vẽ 2.5s ease-in-out, chuyển cảnh crossfade 0.9s kèm blur dissolve, tối đa 2 thứ chuyển động cùng lúc, một yếu tố mỗi lần. Đồng hồ cảnh chạy bằng <b>performance.now()</b> (xem ghi chú trong <b>tick()</b> — đừng dùng đồng hồ của thẻ &lt;audio&gt;). Bảng phong cách Median đã kiểm chứng: nền đen #000, 1 vật thể ở giữa, serif toán trắng cỡ lớn + sans tiêu đề, chỉ 2 màu nhấn có ý nghĩa — xanh periwinkle <b style="color:#7E9BFF">#7E9BFF</b> cho điểm được chọn, xanh mint <b style="color:#6FCF97">#6FCF97</b> cho câu hỏi.</p>
 </div>
 <script>
 const scenes=[
- // Điền đủ 9 cảnh sau khi đo giọng (bước 3): t0/dur lấy từ render_voice.py, cap là caption (giữ số, khác lời thoại đã đánh vần).
+ // Điền đủ các cảnh sau khi đo giọng (bước 3): t0/dur lấy từ render_voice.py, cap là caption (giữ số, khác lời thoại đã đánh vần). Video ngắn: 9 cảnh; video dài: ~38 cảnh.
  {t0:0.8,  dur:5.0, cap:"<b>Câu thoại 1.</b> Caption hiện dưới sân khấu."},
  {t0:7.0,  dur:5.0, cap:"Câu thoại 2, với <span class='b'>từ nhấn xanh</span> và <span class='g'>từ nhấn mint</span>."}
+ // THÊM CẢNH TẠI ĐÂY: {t0:..., dur:..., cap:"..."}, ... theo thứ tự s1, s2, s3, ...
 ];
 const TOTAL=13.2; // = start câu cuối + dur câu cuối (lấy từ bản mix)
 let elapsed=0, playing=false, timer=null, currentIdx=-1;
@@ -108,17 +155,31 @@ function showScene(i){
   capEl.style.opacity=0;
   setTimeout(()=>{ capEl.innerHTML=scenes[i].cap; capEl.style.opacity=1; },180);
 }
+// Ví dụ hiệu ứng đếm số trực tiếp (video 03, cảnh 23: "38" đếm 0→38 trong 3s
+// ease-out) — xem videos/03-gps/animation.html, hàm countUp(), gọi trong showScene.
+const audioEl=document.getElementById('vo');
+let startPerf=null; // wall-clock origin for the scene timer (performance.now)
 function tick(){
-  elapsed+=0.1;
+  // WALL CLOCK là nguồn giờ duy nhất: elapsed tính lại từ performance.now()
+  // mỗi tick, nên setInterval chạy trễ cũng không tích lũy sai số. KHÔNG dùng
+  // đồng hồ của thẻ <audio> — dưới tải ghi hình, audio của headless Chromium
+  // chạy chậm ~2% (đo được 2026-11-26: audio chỉ tiến ~58.7s sau 60s thời gian
+  // thực), hình chậm hơn tiếng ~13s ở cuối video 10 phút và cảnh cuối không bao
+  // giờ xuất hiện. Cách cũ hơn nữa — accumulator elapsed+=0.1 trong
+  // setInterval(tick,100) — cũng chậm ~1–2s ở cuối video dài. Thẻ <audio> chỉ
+  // để nghe thử; video ghi xong mux với bản mix sau, nên cảnh phải theo
+  // thời gian tường, không theo audio.
+  if(startPerf===null) startPerf=performance.now()-elapsed*1000;
+  elapsed=(performance.now()-startPerf)/1000;
   if(elapsed>=TOTAL){ pause(); elapsed=TOTAL; }
   const idx=scenes.findIndex((s,i)=> elapsed>=s.t0 && elapsed < s.t0+s.dur);
   if(idx>=0) showScene(idx); // khoảng nghỉ giữa 2 câu: GIỮ nguyên cảnh cũ, không nhảy cảnh khác
   bar.style.width=(elapsed/TOTAL*100)+'%';
   timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL);
 }
-function play(){ if(elapsed>=TOTAL){ elapsed=0; currentIdx=-1; } playing=true; playBtn.textContent='Tạm dừng'; timer=setInterval(tick,100); const a=document.getElementById('vo'); if(a){ a.currentTime=elapsed; a.play().catch(()=>{}); } }
+function play(){ if(elapsed>=TOTAL){ elapsed=0; currentIdx=-1; } playing=true; playBtn.textContent='Tạm dừng'; startPerf=performance.now()-elapsed*1000; timer=setInterval(tick,100); const a=document.getElementById('vo'); if(a){ a.currentTime=elapsed; a.play().catch(()=>{}); } }
 function pause(){ playing=false; playBtn.textContent='Phát'; clearInterval(timer); const a=document.getElementById('vo'); if(a) a.pause(); }
-function goTo(t){ elapsed=t; const a=document.getElementById('vo'); if(a){ a.currentTime=t; if(playing) a.play().catch(()=>{}); } const i=scenes.findIndex((s)=> t>=s.t0 && t < s.t0+s.dur); currentIdx=-1; showScene(i<0?0:i); bar.style.width=(elapsed/TOTAL*100)+'%'; timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL); }
+function goTo(t){ elapsed=t; startPerf=performance.now()-t*1000; const a=document.getElementById('vo'); if(a){ a.currentTime=t; if(playing) a.play().catch(()=>{}); } const i=scenes.findIndex((s)=> t>=s.t0 && t < s.t0+s.dur); currentIdx=-1; showScene(i<0?0:i); bar.style.width=(elapsed/TOTAL*100)+'%'; timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL); }
 playBtn.onclick=()=> playing?pause():play();
 document.getElementById('restartBtn').onclick=()=>{ goTo(0); play(); };
 document.getElementById('progress').onclick=function(e){ const r=this.getBoundingClientRect(); goTo((e.clientX-r.left)/r.width*TOTAL); };
