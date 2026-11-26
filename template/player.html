@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TÊN VIDEO — Median style, v1.0 + voiceover</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#000;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}
+  .wrap{max-width:820px;margin:0 auto;padding:16px}
+  h1{font-size:16px;margin:4px 0 2px;font-weight:600;color:#fff}
+  h1 span{color:#9A9A9A}
+  .sub{color:#9A9A9A;font-size:12px;margin:0 0 12px;line-height:1.5}
+  .stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
+  svg{width:100%;height:100%;display:block}
+  /* SMOOTH TRANSITIONS (fix from video 01): scenes stack, crossfade 0.5s, never display:none */
+  .scene{display:block;opacity:0;transition:opacity .5s ease;pointer-events:none}
+  .scene.active{opacity:1;pointer-events:auto}
+  .eyebrow{font-size:12px;letter-spacing:.28em;fill:#9A9A9A;font-weight:600}
+  .head{font-size:26px;font-weight:700;fill:#fff}
+  .math{font-family:"Times New Roman",Georgia,serif;fill:#fff}
+  .mathI{font-family:"Times New Roman",Georgia,serif;font-style:italic;fill:#fff}
+  .grey{fill:#9A9A9A}
+  .dim{opacity:.28}
+  .blue{fill:#7E9BFF}.green{fill:#6FCF97}
+  .blueS{stroke:#7E9BFF}.greenS{stroke:#6FCF97}
+  .thin{stroke:#fff;stroke-width:1.5;fill:none}
+  .thinG{stroke:#9A9A9A;stroke-width:1.5;fill:none}
+  .fillChar{fill:#1A1A1A}
+  .fillSlate{fill:#3A4A5A}
+  .fillBlue{fill:#5F7FA8}
+  .mark{font-size:12px;fill:#9A9A9A}
+  /* Median motion: no camera moves. Slow fade, line draws, shape grows. One element at a time. ease-in-out for smoothness. */
+  .active .f1{animation:fade 1.4s ease-in-out both}
+  .active .f2{animation:fade 1.4s 1.2s ease-in-out both}
+  .active .f3{animation:fade 1.4s 2.4s ease-in-out both}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .active .draw{stroke-dasharray:600;stroke-dashoffset:600;animation:draw 1.6s .3s ease-in-out forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .active .grow{animation:grow 1.6s .6s ease-in-out both;transform-origin:center;transform-box:fill-box}
+  @keyframes grow{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
+  .active .blurIn{animation:blurIn 1.6s ease-in-out both}
+  @keyframes blurIn{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+  .caption{min-height:54px;padding:12px 2px 0;font-size:16px;line-height:1.55;color:#fff;transition:opacity .18s ease}
+  .caption b{color:#fff}
+  .caption .b{color:#7E9BFF}.caption .g{color:#6FCF97}
+  .controls{display:flex;gap:12px;align-items:center;margin-top:10px}
+  button{background:none;border:1px solid #555;color:#fff;border-radius:999px;padding:8px 16px;cursor:pointer;font-size:14px}
+  button:hover{border-color:#fff}
+  .progress{flex:1;height:2px;background:#222;cursor:pointer}
+  .progress i{display:block;height:100%;background:#fff;width:0%}
+  .time{font-size:12px;color:#9A9A9A;min-width:80px;text-align:right}
+  .note{font-size:12px;color:#9A9A9A;margin-top:14px;line-height:1.6}
+  .note b{color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tên video? <span>— Median style, v1.0</span></h1>
+  <p class="sub">TEMPLATE — copy file này thành videos/NN-ten/animation.html rồi thay 9 cảnh SVG + mảng scenes[] bên dưới. Xem WORKFLOW.md bước 2.</p>
+
+  <div class="stage">
+  <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+    <!-- VÍ DỤ cảnh 1 — HOOK: thay bằng 9 cảnh của bạn, giữ id s1..s9 -->
+    <g class="scene" id="s1">
+      <circle cx="400" cy="200" r="110" fill="none" stroke="#9A9A9A" stroke-width="1.5"/>
+      <circle cx="400" cy="200" r="78" fill="none" stroke="#9A9A9A" stroke-width="1.5"/>
+      <text x="372" y="235" font-size="96" class="math">?</text>
+      <text x="400" y="340" font-size="20" text-anchor="middle" class="grey">Câu hỏi hook ở đây.</text>
+      <text x="770" y="430" text-anchor="end" class="mark">ten-video — 0N</text>
+    </g>
+    <!-- VÍ DỤ cảnh 2 — thêm s2..s9 tương tự -->
+    <g class="scene" id="s2">
+      <text x="40" y="48" class="eyebrow">PHẦN 1 — TIÊU ĐỀ PHẦN</text>
+      <text x="400" y="210" font-size="30" text-anchor="middle" class="math">Một ý duy nhất ở đây</text>
+      <text x="400" y="270" font-size="18" text-anchor="middle" class="grey">Chữ giải thích nhỏ, màu xám.</text>
+      <text x="770" y="430" text-anchor="end" class="mark">ten-video — 0N</text>
+    </g>
+  </svg>
+  </div>
+
+  <audio id="vo" src="audio-full.mp3" preload="auto"></audio>
+  <div class="caption" id="caption"></div>
+  <div class="controls">
+    <button id="playBtn">Phát</button>
+    <button id="restartBtn">Xem lại</button>
+    <div class="progress" id="progress"><i id="bar"></i></div>
+    <div class="time" id="time">0:00 / 1:00</div>
+  </div>
+  <p class="note"><b>Video 02 — Embedding là gì?</b> Chuyển cảnh crossfade 0.5s, easing ease-in-out — mượt hơn video 01 (vốn cắt cứng giữa các cảnh). Bảng phong cách Median đã kiểm chứng: nền đen #000, 1 vật thể ở giữa, serif toán trắng cỡ lớn + sans tiêu đề, chỉ 2 màu nhấn có ý nghĩa — xanh periwinkle <b style="color:#7E9BFF">#7E9BFF</b> cho điểm được chọn, xanh mint <b style="color:#6FCF97">#6FCF97</b> cho câu hỏi.</p>
+</div>
+<script>
+const scenes=[
+ // Điền đủ 9 cảnh sau khi đo giọng (bước 3): t0/dur lấy từ render_voice.py, cap là caption (giữ số, khác lời thoại đã đánh vần).
+ {t0:0.8,  dur:5.0, cap:"<b>Câu thoại 1.</b> Caption hiện dưới sân khấu."},
+ {t0:7.0,  dur:5.0, cap:"Câu thoại 2, với <span class='b'>từ nhấn xanh</span> và <span class='g'>từ nhấn mint</span>."}
+];
+const TOTAL=13.2; // = start câu cuối + dur câu cuối (lấy từ bản mix)
+let elapsed=0, playing=false, timer=null, currentIdx=-1;
+const capEl=document.getElementById('caption'), bar=document.getElementById('bar'), timeEl=document.getElementById('time'), playBtn=document.getElementById('playBtn');
+function fmt(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function showScene(i){
+  if(i===currentIdx) return;
+  currentIdx=i;
+  scenes.forEach((s,j)=>{
+    document.getElementById('s'+(j+1)).classList.toggle('active', j===i);
+  });
+  capEl.style.opacity=0;
+  setTimeout(()=>{ capEl.innerHTML=scenes[i].cap; capEl.style.opacity=1; },180);
+}
+function tick(){
+  elapsed+=0.1;
+  if(elapsed>=TOTAL){ pause(); elapsed=TOTAL; }
+  const idx=scenes.findIndex((s,i)=> elapsed>=s.t0 && elapsed < s.t0+s.dur);
+  if(idx>=0) showScene(idx); // khoảng nghỉ giữa 2 câu: GIỮ nguyên cảnh cũ, không nhảy cảnh khác
+  bar.style.width=(elapsed/TOTAL*100)+'%';
+  timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL);
+}
+function play(){ if(elapsed>=TOTAL){ elapsed=0; currentIdx=-1; } playing=true; playBtn.textContent='Tạm dừng'; timer=setInterval(tick,100); const a=document.getElementById('vo'); if(a){ a.currentTime=elapsed; a.play().catch(()=>{}); } }
+function pause(){ playing=false; playBtn.textContent='Phát'; clearInterval(timer); const a=document.getElementById('vo'); if(a) a.pause(); }
+function goTo(t){ elapsed=t; const a=document.getElementById('vo'); if(a){ a.currentTime=t; if(playing) a.play().catch(()=>{}); } const i=scenes.findIndex((s)=> t>=s.t0 && t < s.t0+s.dur); currentIdx=-1; showScene(i<0?0:i); bar.style.width=(elapsed/TOTAL*100)+'%'; timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL); }
+playBtn.onclick=()=> playing?pause():play();
+document.getElementById('restartBtn').onclick=()=>{ goTo(0); play(); };
+document.getElementById('progress').onclick=function(e){ const r=this.getBoundingClientRect(); goTo((e.clientX-r.left)/r.width*TOTAL); };
+showScene(0);
+</script>
+</body>
+</html>
