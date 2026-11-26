@@ -1,0 +1,9 @@
+Chữ thì máy không hiểu. Máy chỉ hiểu số.
+Embedding là phép biến một câu thành một dãy số — một điểm trên bản đồ.
+Ví dụ nhé: doanh thu quý ba và lợi nhuận quý ba, nghĩa gần nhau, nên hai điểm đứng gần nhau.
+Còn doanh thu quý ba với cách nấu phở — chẳng liên quan gì, hai điểm đứng xa nhau.
+Gần hay xa, máy đo bằng khoảng cách giữa hai điểm. Càng gần, càng giống nhau.
+Trong project RAG của t, mỗi mảnh tài liệu năm trăm ký tự được biến thành một điểm như vậy, bằng Gemini.
+Câu hỏi cũng thành một điểm, rồi máy tìm ba điểm gần nhất — đó là lúc RAG tìm tài liệu.
+Không có embedding, máy không biết mảnh nào liên quan, nó chỉ còn cách đọc hết cả tài liệu, hoặc đoán mò.
+Nên nhớ một câu thôi: embedding là biến chữ thành số, để cái gì giống nhau thì đứng gần nhau.
