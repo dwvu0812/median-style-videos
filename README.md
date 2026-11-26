@@ -1,8 +1,8 @@
 # Median-Style Videos — Workflow làm video giải thích hoạt hình phong cách Median
 
-Workflow hoàn chỉnh để làm video giải thích ngắn (khoảng 1 phút) theo phong cách kênh YouTube **Median** (@median-lab): nền đen, một vật thể ở giữa, chuyển động chậm gắn với lời thoại, giọng đọc Bắc trầm, đăng lên Facebook Reels.
+Workflow hoàn chỉnh để làm video giải thích theo phong cách kênh YouTube **Median** (@median-lab): nền đen, một vật thể ở giữa, chuyển động chậm gắn với lời thoại. Hai dạng đã làm xong: video ngắn ~1 phút tiếng Việt đăng Facebook Reels, và video dài 10–12 phút tiếng Anh cho kênh YouTube quốc tế.
 
-> English: a complete, reusable workflow for making short Median-style animated explainer videos in Vietnamese — script, SVG animation player, voiceover, 1080p export, Facebook Reels. Two finished videos are included as examples.
+> English: a complete, reusable workflow for making Median-style animated explainer videos — short Vietnamese videos (~1 min) for Facebook Reels, and long-form English videos (10–12 min) for international YouTube. Three finished videos are included as examples.
 
 ## Video đã làm bằng workflow này
 
@@ -10,6 +10,7 @@ Workflow hoàn chỉnh để làm video giải thích ngắn (khoảng 1 phút) 
 |---|--------|---------------------------|------|
 | 01 | RAG hoạt động như thế nào? | 48 giây | [facebook.com/reel/1797776648004105](https://facebook.com/reel/1797776648004105/) (bản 60s) · [bản nhanh 48s](https://facebook.com/reel/2332818500907222/) |
 | 02 | Embedding là gì? | 55 giây | [facebook.com/reel/1142893768252712](https://facebook.com/reel/1142893768252712/) |
+| 03 | Why GPS Would Fail in 2 Minutes Without Einstein (tiếng Anh) | 8:13 (bản nhanh 1.25x; raw 10:17, v1 10:49) | YouTube — xem [videos/03-gps/](videos/03-gps/) (kèm thumbnail + publish pack) |
 
 ## Quickstart — làm video mới trong 7 bước
 
@@ -40,6 +41,8 @@ bash scripts/speedup.sh videos/03-ten-chu-de/video-1080p.mp4 videos/03-ten-chu-d
 # 7. Đăng Reel lên page Bug 5h Chiều (xem WORKFLOW.md bước 7)
 ```
 
+> Video dài tiếng Anh (video 03) làm cùng 7 bước nhưng khác ở: kịch bản ~1.500 từ / 38 câu / 8 chương (WORKFLOW.md §2b), giọng Muse speed 105, xuất hình theo thời gian thực 10–12 phút, và **không đăng Facebook** — deliverable là MP4 + thumbnail + publish pack cho YouTube.
+
 **Chi tiết từng bước, bảng phong cách Median, và các lỗi đã gặp: xem [WORKFLOW.md](WORKFLOW.md).**
 
 ## Cấu trúc repo
@@ -57,20 +60,22 @@ bash scripts/speedup.sh videos/03-ten-chu-de/video-1080p.mp4 videos/03-ten-chu-d
 ├── assets/sfx/               <- whoosh, pop, tick, thud, chime (wav)
 └── videos/
     ├── 01-rag/               <- kịch bản, animation, audio mix, mp4
-    └── 02-embedding/
+    ├── 02-embedding/
+    └── 03-gps/               <- video dài tiếng Anh: + thumbnail.png, youtube-publish-pack.md
 ```
 
 Mỗi video gồm: `kich-ban-storyboard.md`, `lines.txt` (lời thoại), `animation.html`,
 `mix.json` (nhịp giọng + SFX), `audio-full.mp3`, `video-1080p.mp4`, `video-1080p-fast.mp4`
-(bản đăng).
+(bản đăng). Video dài thêm `thumbnail.png` (1280x720) và `youtube-publish-pack.md`.
 
 ## Phong cách Median — tóm tắt 5 dòng
 
 Nền đen #000, không gradient, không 3D. Một vật thể ở giữa, khoảng trống lớn.
 Chữ toán serif trắng cỡ lớn + tiêu đề sans đậm. Chỉ 2 màu nhấn có ý nghĩa:
 xanh periwinkle #7E9BFF (điểm được chọn), xanh mint #6FCF97 (câu hỏi).
-Chuyển động: fade, vẽ đường, hình mọc ra — 1 yếu tố mỗi lần, nhịp 5–10 giây / 1 hình.
-Chuyển cảnh crossfade 0.5s, ease-in-out, không cắt cứng.
+Chuyển động: blur-in chậm 1.8s, vẽ đường 2.5s, hình mọc ra — 1 yếu tố mỗi lần, tối đa
+2 thứ chuyển động cùng lúc, nhịp 5–10 giây / 1 hình. Chuyển cảnh crossfade 0.9s kèm
+blur dissolve, không cắt cứng. Đồng hồ cảnh chạy bằng `performance.now()` (xem WORKFLOW.md §3).
 
 ## License
 
