@@ -2,7 +2,7 @@
 
 Workflow hoàn chỉnh để làm video giải thích theo phong cách kênh YouTube **Median** (@median-lab): nền đen, một vật thể ở giữa, chuyển động chậm gắn với lời thoại. Hai dạng đã làm xong: video ngắn ~1 phút tiếng Việt đăng Facebook Reels, và video dài 10–12 phút tiếng Anh cho kênh YouTube quốc tế.
 
-> English: a complete, reusable workflow for making Median-style animated explainer videos — short Vietnamese videos (~1 min) for Facebook Reels, and long-form English videos (10–12 min) for international YouTube. Three finished videos are included as examples.
+> English: a complete, reusable workflow for making Median-style animated explainer videos — short Vietnamese videos (~1 min) for Facebook Reels, and long-form English videos (10–20 min) for international YouTube. Four finished videos are included as examples.
 
 ## Video đã làm bằng workflow này
 
@@ -10,7 +10,8 @@ Workflow hoàn chỉnh để làm video giải thích theo phong cách kênh You
 |---|--------|---------------------------|------|
 | 01 | RAG hoạt động như thế nào? | 48 giây | [facebook.com/reel/1797776648004105](https://facebook.com/reel/1797776648004105/) (bản 60s) · [bản nhanh 48s](https://facebook.com/reel/2332818500907222/) |
 | 02 | Embedding là gì? | 55 giây | [facebook.com/reel/1142893768252712](https://facebook.com/reel/1142893768252712/) |
-| 03 | Why GPS Would Fail in 2 Minutes Without Einstein (tiếng Anh) | 8:13 (bản nhanh 1.25x; raw 10:17, v1 10:49) | YouTube — xem [videos/03-gps/](videos/03-gps/) (kèm thumbnail + publish pack) |
+| 03 | Why GPS Would Fail in 2 Minutes Without Einstein (tiếng Anh) | 12:45 (bản cuối v2.5, 1.0x) | [YouTube](https://youtu.be/bqZfkYy7t8M) — xem [videos/03-gps/](videos/03-gps/) (kèm thumbnail + publish pack) |
+| 04 | Why 23 People Is Enough — The Birthday Paradox (tiếng Anh) | 10:28 (bản cuối v1.1, 1.0x) | [YouTube](https://youtu.be/nV5hiMjqB9M) — xem [videos/04-birthday/](videos/04-birthday/) (kèm thumbnail + publish pack + 3 Shorts) |
 
 ## Quickstart — làm video mới trong 7 bước
 
@@ -25,7 +26,7 @@ python3 -m playwright install chromium
 cp template/player.html videos/03-ten-chu-de/animation.html
 #    ... vẽ 9 cảnh SVG, điền scenes[] với nhịp đo được ở bước 3 ...
 
-# 3. Lồng tiếng giọng A, đo nhịp từng câu
+# 3. Lồng tiếng, đo nhịp từng câu (video ngắn tiếng Việt: giọng A speed 90; video dài tiếng Anh: giọng B Quivering Oak speed 80, xem WORKFLOW.md §4)
 python3 scripts/render_voice.py videos/03-ten-chu-de/lines.txt videos/03-ten-chu-de/audio/
 #    -> vo-01.mp3 ... + JSON nhịp (starts, durations, total)
 
@@ -35,13 +36,13 @@ python3 scripts/mix_audio.py videos/03-ten-chu-de/audio/ videos/03-ten-chu-de/mi
 # 5. Xuất video 1080p (ghi màn hình trình duyệt + mux tiếng)
 python3 scripts/export_video.py videos/03-ten-chu-de/animation.html <TOTAL> videos/03-ten-chu-de/audio-full.mp3 videos/03-ten-chu-de/video-1080p.mp4
 
-# 6. Tăng tốc 1.25x (60s -> ~48s, hình + tiếng vẫn khớp)
+# 6. Tăng tốc 1.25x — CHỈ cho video ngắn tiếng Việt (60s -> ~48s, hình + tiếng vẫn khớp). Video dài tiếng Anh KHÔNG tăng tốc (1.0x, xem WORKFLOW.md §7)
 bash scripts/speedup.sh videos/03-ten-chu-de/video-1080p.mp4 videos/03-ten-chu-de/video-1080p-fast.mp4
 
 # 7. Đăng Reel lên page Bug 5h Chiều (xem WORKFLOW.md bước 7)
 ```
 
-> Video dài tiếng Anh (video 03) làm cùng 7 bước nhưng khác ở: kịch bản ~1.500 từ / 38 câu / 8 chương (WORKFLOW.md §2b), giọng Muse speed 105, xuất hình theo thời gian thực 10–12 phút, và **không đăng Facebook** — deliverable là MP4 + thumbnail + publish pack cho YouTube.
+> Video dài tiếng Anh (video 03, 04) làm cùng 7 bước nhưng khác ở: kịch bản ~1.200–1.500 từ / 38 câu / 8 chương (WORKFLOW.md §2b), giọng B Quivering Oak speed 80 ở 1.0x, xuất hình theo thời gian thực 10–20 phút, và **không đăng Facebook** — deliverable là MP4 + thumbnail + publish pack cho YouTube (+ 2–3 Shorts cắt từ video dài, xem WORKFLOW.md §8).
 
 **Chi tiết từng bước, bảng phong cách Median, và các lỗi đã gặp: xem [WORKFLOW.md](WORKFLOW.md).**
 
@@ -61,7 +62,8 @@ bash scripts/speedup.sh videos/03-ten-chu-de/video-1080p.mp4 videos/03-ten-chu-d
 └── videos/
     ├── 01-rag/               <- kịch bản, animation, audio mix, mp4
     ├── 02-embedding/
-    └── 03-gps/               <- video dài tiếng Anh: + thumbnail.png, youtube-publish-pack.md
+    ├── 03-gps/               <- video dài tiếng Anh: + thumbnail.png, youtube-publish-pack.md, shorts/, channel-branding/
+    └── 04-birthday/          <- video dài tiếng Anh thứ 2: + thumbnail.png, youtube-publish-pack.md, shorts/
 ```
 
 Mỗi video gồm: `kich-ban-storyboard.md`, `lines.txt` (lời thoại), `animation.html`,
@@ -74,8 +76,7 @@ Nền đen #000, không gradient, không 3D. Một vật thể ở giữa, kho�
 Chữ toán serif trắng cỡ lớn + tiêu đề sans đậm. Chỉ 2 màu nhấn có ý nghĩa:
 xanh periwinkle #7E9BFF (điểm được chọn), xanh mint #6FCF97 (câu hỏi).
 Chuyển động: blur-in chậm 1.8s, vẽ đường 2.5s, hình mọc ra — 1 yếu tố mỗi lần, tối đa
-2 thứ chuyển động cùng lúc, nhịp 5–10 giây / 1 hình. Chuyển cảnh crossfade 0.9s kèm
-blur dissolve, không cắt cứng. Đồng hồ cảnh chạy bằng `performance.now()` (xem WORKFLOW.md §3).
+2 thứ chuyển động cùng lúc, nhịp 5–10 giây / 1 hình. Chuyển cảnh dissolve 0.45s, blur chỉ ở cảnh đi, không cắt cứng. Đồng hồ cảnh chạy bằng `performance.now()` (xem WORKFLOW.md §3).
 
 ## License
 

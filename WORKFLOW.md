@@ -2,8 +2,7 @@
 
 Một tài liệu duy nhất, đủ để làm lại video từ đầu. Đã kiểm chứng bằng 3 video thật:
 01 RAG và 02 Embedding (video ngắn ~60s, tiếng Việt, đã đăng lên page Facebook
-Bug 5h Chiều) và 03 GPS (video dài 10–12 phút, tiếng Anh, cho kênh YouTube quốc tế —
-bản nhanh cuối 8:13, kèm thumbnail).
+Bug 5h Chiều), 03 GPS (video dài tiếng Anh, cho kênh YouTube quốc tế — bản cuối v2.5 12:45 ở tốc độ 1.0x, kèm thumbnail) và 04 Birthday Paradox (video dài tiếng Anh 10:28, bản cuối v1.1, kèm thumbnail + 3 Shorts).
 
 ---
 
@@ -73,8 +72,7 @@ phong cách. Video 03 làm mẫu:
   `videos/03-gps/thumbnail.png`.
 - **Publish pack:** viết sẵn tiêu đề, mô tả, chapters, tags vào
   `videos/NN-ten/youtube-publish-pack.md` (mẫu: `videos/03-gps/youtube-publish-pack.md`).
-  Chapter timestamps tính từ `mix.json` voice_starts (bản raw) chia cho 1.25, làm tròn
-  xuống từng giây, đối chiếu với độ dài thật của bản nhanh.
+  Chapter timestamps tính từ `mix.json` voice_starts (bản raw), làm tròn xuống từng giây. Video dài tiếng Anh xuất ở 1.0x nên không chia gì cả (cách chia 1.25 cũ chỉ đúng khi còn tăng tốc, đã bỏ từ video 03 v2.4). Mô tả thêm, theo mẫu kênh Quaselo: 1 câu hỏi thảo luận cho bình luận + danh sách nguồn sau phần chapters.
 - Video dài tiếng Anh **KHÔNG đăng lên page Bug 5h Chiều** — page đó là nội dung
   tiếng Việt. Deliverable là file MP4 + thumbnail (+ publish pack).
 
@@ -110,10 +108,10 @@ dưới sân khấu, nút Phát / Xem lại + thanh tiến trình, thẻ `<audio
 - Các cảnh xếp chồng, **không bao giờ `display:none`**:
   `.scene{display:block;opacity:0;transition:opacity .9s ease,filter .9s ease;filter:blur(6px);pointer-events:none}`
   `.scene.active{opacity:1;filter:blur(0)}` — cảnh cũ mờ dần + nhòe dần trong khi
-  cảnh mới hiện dần (crossfade 0.9s kèm blur dissolve; trước v2.1 chỉ 0.5s opacity).
+  cảnh mới hiện dần (dissolve 0.45s, blur chỉ ở cảnh ĐI — cảnh tới giữ nét; trước v2.2 là 0.9s blur cả hai chiều, làm ~1s mỗi lần chuyển đều mờ không đọc được).
 - **Vào hình là blur-in chậm, không bao giờ bật ra:** `.f1/.f2/.f3` dùng
   `blurFade` 1.8s `cubic-bezier(.22,1,.36,1)` (opacity 0→1 + blur(8px)→0), trễ
-  0s / 1.4s / 2.8s — một yếu tố mỗi lần, theo từng câu thoại. Khoảnh khắc lớn dùng
+  0s / 0.8s / 1.6s (v2.2 siết từ 0/1.4/2.8) — một yếu tố mỗi lần, theo từng câu thoại. Khoảnh khắc lớn dùng
   `arrive` thay cho slam: scale 1.06→1 + blur(6px)→0 + fade, 1.8s, cùng đường cong.
   Số đếm trực tiếp (0→38) ease-out ~3s, không linear.
 - **Vẽ đường chậm:** `draw` 2.5s ease-in-out; đặt `pathLength="100"` lên đường/path
@@ -169,10 +167,7 @@ Gemini), ElevenLabs `JnYgWPGqZl8gyvnE7Mdm` "DgNguyen - Deep Northern Narrator"
 - ElevenLabs Magnus (giọng nam Anh trầm): đọc được 7 câu, rồi user từ chối phê duyệt
   connector và bỏ ElevenLabs hẳn. Giọng hay nhưng tốn credit (~200 credit/câu) và
   mỗi lần gọi cần phê duyệt — không hợp làm video dài.
-- **Giọng cuối cùng: Muse TTS giọng A, tiếng Anh, speed 105** — đọc lại hết 38 câu
-  trong ~5 phút, một giọng thống nhất. Đánh đổi (user đã chấp nhận): giọng Anh mang
-  âm Việt vì catalog chỉ có giọng Việt. `render_voice.py` mặc định speed 90 cho
-  video tiếng Việt; video tiếng Anh dùng speed 105. Script trong `scripts/`:
+- **Giọng cuối cùng (từ video 03 v2.3, dùng cho cả video 04): Muse TTS giọng B Quivering Oak (`avocado_v2:vd2_quivering_oak`, nam Anh rất trầm, median pitch 101 Hz), tiếng Anh, speed 80** — tốc độ thật 116.9 wpm ở 1.0x, nghe đúng như lúc thử giọng. Quy tắc tốc độ hiệu dụng: wpm cuối = wpm TTS × hệ số tăng tốc — giọng A ở TTS 105 × 1.25x ≈ 200 wpm nghe vội và méo, đó là lý do video dài tiếng Anh bỏ tăng tốc hẳn (xem §7). Giọng A (`vd2_smoky_teacup`, speed 90) vẫn dùng cho video ngắn tiếng Việt. `render_voice.py` mặc định speed 90 cho video tiếng Việt; video dài tiếng Anh dùng giọng B speed 80. Script trong `scripts/`:
   `render_voice_muse.py`, `render_voice_gemini.py`, `render_voice_elevenlabs.py`.
 
 ## 5. Trộn giọng + SFX + nhạc nền
@@ -205,8 +200,7 @@ python3 scripts/export_video.py videos/NN-ten/animation.html <TOTAL> videos/NN-t
 ```
 
 Script tự tạo bản export của HTML (ẩn tiêu đề/caption/nút/ghi chú, sân khấu full
-100vw x 100vh), ghi màn hình Chromium 1920x1080 trong lúc player chạy, cắt 1.5s
-đoạn chờ trước khi bấm Phát, mux với bản mix (`libx264 yuv420p crf 20, AAC 160k`).
+100vw x 100vh), ghi màn hình Chromium 1920x1080 trong lúc player chạy, cắt đúng độ lệch click ĐO ĐƯỢC (thời gian từ lúc tải trang tới khi bấm Phát: v2.2 đo 1.948s, v2.3 2.078s, v2.5 3.072s, video 04 v1.1 2.487s) — không bao giờ cắt cố định 1.5s, và `-ss` phải đặt TRƯỚC `-i` của video (đặt giữa 2 `-i` sẽ cắt nhầm AUDIO), mux với bản mix (`libx264 yuv420p crf 20, AAC 160k`).
 
 Video dài ghi hình **theo thời gian thực**: video 10–12 phút thì ghi mất 10–12 phút,
 chạy nền, đừng poll liên tục. Kiểm tra frame ở 4–5 mốc (hook, giữa, cảnh số chính,
@@ -222,10 +216,7 @@ và xem bằng mắt — cảnh đúng, chữ đúng, không nháy cảnh lạ t
 ## 7. Tăng tốc 1.25x rồi đăng
 
 Nhịp 60 giây bị user chê chậm (2026-11-25). Tăng tốc toàn bộ 1.25x, hình + tiếng
-vẫn khớp nhau vì cả hai cùng co lại. **1.25x là lựa chọn theo ý user, không phải
-luật cứng** — video 03 (dài) vẫn giữ 1.25x theo ý user: raw 616.7s → bản nhanh
-493.4s (8:13). Video dài vốn chậm có chủ ý theo kiểu Median; chỉ tăng tốc khi user
-đã xem và thấy chậm.
+vẫn khớp nhau vì cả hai cùng co lại. **1.25x CHỈ dùng cho video ngắn tiếng Việt.** Video dài tiếng Anh KHÔNG tăng tốc nữa (quy tắc từ video 03 v2.4, sau khi user chỉ ra tăng tốc làm giọng vội và méo, không giống lúc nghe thử): bản cuối chính là bản raw 1.0x — video 03 v2.5 là 765.28s (12:45), video 04 v1.1 là 627.6s (10:28). Nếu thấy chậm thì sửa kịch bản/tốc độ TTS, không tua nhanh audio đã xong.
 
 ```bash
 bash scripts/speedup.sh videos/NN-ten/video-1080p.mp4 videos/NN-ten/video-1080p-fast.mp4
@@ -272,6 +263,21 @@ Dòng 3: ... — đó là <chủ đề>, <số giây> giây là hiểu.' \
 - [ ] Đã xem 4–5 frame (hook/giữa/số chính/recap/cuối), hình–tiếng khớp ở **cuối**
 - [ ] Publish pack (tiêu đề/mô tả/chapters/tags) đã viết xong
 - [ ] Không đăng lên page Bug 5h Chiều (video tiếng Anh cho YouTube)
+
+## 2c. Bài học review + đo Median thật (video 03 v2.2–v2.5, video 04 v1.1)
+
+- Dissolve 0.45s, blur chỉ ở cảnh đi; vật chuyển động không bao giờ được chạy qua chữ (kiểm tra từng quỹ đạo/chấm bay với hộp chữ); hình hook chính phải lên màn hình trong 3 giây đầu; không cảnh nào chỉ có 2 dòng thoại mà kéo 17 giây; số kiểu "millionths" phải diễn đạt lại cho TTS ("seven parts in a million"); gạch chân dài đúng bề rộng chữ đo bằng `getBBox()`.
+- Âm thanh: chuẩn hoá mix về khoảng −14 LUFS (mix giọng có crest factor cao nên trần thực tế ~−16.8 LUFS ở TP −1 — đừng nén giọng thêm; YouTube tự chuẩn hoá phần còn lại).
+- **Đo Median thật (84 frame, pixel script): KHÔNG có light pool, glow, vignette hay gradient** — nền đen thuần (#000 / #0A0A0A). Cảm giác "điện ảnh" đến từ vật thể: khối tô đặc (charcoal #212120, xám #464845, slate-blue #6980A5), mặt khối tô 2 tông (mặt trên sáng hơn mặt bên, như có key light từ trên), mật độ ~8 yếu tố/khung (mình ~4), ink coverage median 2.9% toàn khung / 5.2% vùng giữa (mình 1.7% / 2.5%). Bố cục: 2 cột (sơ đồ + phép tính), cặp so sánh, đường kích thước + vạch + nhãn. Áp dụng ở video 03 v2.5 (ink vùng giữa 6.69%, hơi vượt Median) và video 04 v1.1 (đường cong xác suất thật + bảng people-vs-chance).
+- **Chuẩn chất lượng (user đặt 2026-11-27): video phải là thứ mình tự hào và muốn xem lại; phải có giá trị tham khảo để người xem xem đi xem lại.** Trước khi gọi xong: xem lại toàn bộ bản cuối như người xem thật, ghi rõ đoạn nào muốn tua, khung nào muốn chụp lại, chỗ nào chán — sửa chỗ tệ nhất. Mỗi video cần ít nhất 2 khung "đáng chụp lại" (bảng tính/phép tính làm ra, không phải minh họa cho có); recap nói được trong 1 câu.
+
+## 8. Cắt Shorts từ video dài
+
+Mỗi video dài cắt 2–3 Shorts (30–60s, 1 ý mỗi cái, hook 2 giây đầu), đăng mỗi ngày 1 cái: cái đầu công khai ngay, các cái sau hẹn 09:00 ICT.
+
+- Format: 1080x1920, video scale 1080x607 đặt giữa nền đen thuần, phụ đề tiếng Anh đốt trực tiếp vào khoảng đen dưới video (chia cụm theo câu thoại, chia thời gian theo tỉ lệ ký tự), tiêu đề hook đậm trên cùng, tag nhỏ "The Maths Inside" dưới cùng. H.264 + AAC 160k, yuv420p, faststart. Script: `videos/NN-ten/shorts/build_shorts.py`.
+- Mô tả Short gắn link video dài thật (điền sau khi video dài đã lên sóng). Nút "Related video" cần xác minh kênh 1 lần (xác minh bằng số điện thoại trong Studio) — chưa xác minh thì bỏ qua, chỉ dùng link trong mô tả.
+- Ví dụ: GPS Shorts (`videos/03-gps/shorts/`, 3 cái, đã đăng 27/11) và Birthday Shorts (`videos/04-birthday/shorts/`, 3 cái, đã đăng 27/11).
 
 ## Các lỗi đã gặp (đừng lặp lại)
 
