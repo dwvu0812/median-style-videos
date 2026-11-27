@@ -1,0 +1,197 @@
+{
+  "voice_starts": [
+    0.8,
+    14.744,
+    29.288,
+    48.56,
+    62.648,
+    80.072,
+    101.648,
+    112.592,
+    126.176,
+    141.248,
+    154.328,
+    172.856,
+    189.944,
+    205.136,
+    223.472,
+    236.408,
+    257.48,
+    270.464,
+    285.44,
+    300.224,
+    317.96,
+    333.032,
+    356.072,
+    372.752,
+    384.824,
+    400.712,
+    416.6,
+    435.728,
+    449.864,
+    462.392,
+    480.08,
+    494.456,
+    515.384,
+    544.76,
+    561.632,
+    581.504,
+    593.096,
+    612.92
+  ],
+  "sfx": [
+    {
+      "file": "sfx-whoosh.wav",
+      "at": 1.5
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 15.444
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 29.988
+    },
+    {
+      "file": "sfx-thud.wav",
+      "at": 49.26
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 63.348
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 80.772
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 102.348
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 113.292
+    },
+    {
+      "file": "sfx-whoosh.wav",
+      "at": 126.876
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 141.948
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 155.028
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 173.556
+    },
+    {
+      "file": "sfx-whoosh.wav",
+      "at": 190.644
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 205.836
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 224.172
+    },
+    {
+      "file": "sfx-whoosh.wav",
+      "at": 237.108
+    },
+    {
+      "file": "sfx-thud.wav",
+      "at": 258.18
+    },
+    {
+      "file": "sfx-chime.wav",
+      "at": 271.964
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 286.14
+    },
+    {
+      "file": "sfx-thud.wav",
+      "at": 300.924
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 318.66
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 333.732
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 356.772
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 373.452
+    },
+    {
+      "file": "sfx-whoosh.wav",
+      "at": 385.524
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 401.412
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 417.3
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 436.428
+    },
+    {
+      "file": "sfx-whoosh.wav",
+      "at": 450.564
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 463.092
+    },
+    {
+      "file": "sfx-tick.wav",
+      "at": 480.78
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 495.156
+    },
+    {
+      "file": "sfx-thud.wav",
+      "at": 516.084
+    },
+    {
+      "file": "sfx-pop.wav",
+      "at": 545.46
+    },
+    {
+      "file": "sfx-chime.wav",
+      "at": 563.132
+    },
+    {
+      "file": "sfx-whoosh.wav",
+      "at": 582.204
+    },
+    {
+      "file": "sfx-chime.wav",
+      "at": 594.596
+    },
+    {
+      "file": "sfx-chime.wav",
+      "at": 614.42
+    }
+  ],
+  "total": 627.608
+}

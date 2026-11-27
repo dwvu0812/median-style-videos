@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why 23 People Is Enough — The Birthday Paradox — Median style, v1.1 + voiceover</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#000;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}
+  .wrap{max-width:820px;margin:0 auto;padding:16px}
+  h1{font-size:16px;margin:4px 0 2px;font-weight:600;color:#fff}
+  h1 span{color:#9A9A9A}
+  .sub{color:#9A9A9A;font-size:12px;margin:0 0 12px;line-height:1.5}
+  .stage{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
+  svg{width:100%;height:100%;display:block}
+  /* v2.2 REVIEW FIXES — dissolve was the flaw: the 0.9s blur dissolve made all 37
+     cuts ~1s illegible (~33s, 7% of the video). New rule: 0.45s crossfade, blur ONLY
+     the OUTGOING scene (max 3px), incoming arrives sharp. Implemented via the
+     transition split below: .scene (leaving) transitions opacity+filter, while
+     .scene.active transitions opacity only, so the incoming scene's filter snaps
+     3px->0 instantly and it is never blurred. Blur-in entrances stay 1.8s.
+     Captions stagger tightened 0/1.4/2.8s -> 0/0.8/1.6s (review: captions arrived
+     ~3s late). At most 2 things moving at once. Constant-speed rotation
+     (orbits, clock hands) stays linear — physics; everything else eases. */
+  .scene{display:block;opacity:0;transition:opacity .45s ease,filter .45s ease;pointer-events:none;filter:blur(3px)}
+  .scene.active{opacity:1;filter:blur(0);pointer-events:auto;transition:opacity .45s ease}
+  .eyebrow{font-size:12px;letter-spacing:.28em;fill:#9A9A9A;font-weight:600}
+  .head{font-size:26px;font-weight:700;fill:#fff}
+  .math{font-family:"Times New Roman",Georgia,serif;fill:#fff}
+  .mathI{font-family:"Times New Roman",Georgia,serif;font-style:italic;fill:#fff}
+  .grey{fill:#9A9A9A}
+  .dim{opacity:.28}
+  .blue{fill:#7E9BFF}.green{fill:#6FCF97}
+  .blueS{stroke:#7E9BFF}.greenS{stroke:#6FCF97}
+  .thin{stroke:#fff;stroke-width:1.5;fill:none}
+  .thinG{stroke:#9A9A9A;stroke-width:1.5;fill:none}
+  .fillChar{fill:#1A1A1A}
+  /* v2.5 MEASURED MEDIAN RULES — fills / face shading (see SKILL.md §2d):
+     main shapes get SOLID charcoal fills (#212120), bars mid-grey #464845 or
+     solid periwinkle/mint; 3D-ish objects get 2-value flat face shading
+     (top face lighter #3A3F45, side faces darker #22262B), solid fills only —
+     NO gradients/blur/glow, background stays pure #000. */
+  .fillMain{fill:#212120}
+  .fillMid{fill:#464845}
+  .fillTop{fill:#3A3F45}
+  .fillSide{fill:#22262B}
+  .fillPeri{fill:#7E9BFF}
+  .fillMint{fill:#6FCF97}
+  .fillPanel{fill:#141414}
+  .ink{fill:#000}
+  .fillSlate{fill:#3A4A5A}
+  .fillBlue{fill:#5F7FA8}
+  .mark{font-size:12px;fill:#9A9A9A}
+  /* Entrances: slow blur-in + fade, 1.8s, ease-out cubic-bezier(0.22,1,0.36,1).
+     One element at a time: f1 at 0s, f2 at 1.4s, f3 at 2.8s. Nothing pops. */
+  .active .f1{animation:blurFade 1.8s cubic-bezier(.22,1,.36,1) both}
+  .active .f2{animation:blurFade 1.8s 0.8s cubic-bezier(.22,1,.36,1) both}
+  .active .f3{animation:blurFade 1.8s 1.6s cubic-bezier(.22,1,.36,1) both}
+  @keyframes blurFade{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+  .active .blurIn{animation:blurFade 1.8s cubic-bezier(.22,1,.36,1) both}
+  /* Line drawing: 2.5s, ease-in-out. Uses pathLength="100" on the element,
+     so dasharray 100 always means the full length, whatever the shape. */
+  .active .draw{stroke-dasharray:100;stroke-dashoffset:100;animation:draw 2.5s .3s ease-in-out forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .active .grow{animation:grow 2s .6s cubic-bezier(.22,1,.36,1) both;transform-origin:center;transform-box:fill-box}
+  @keyframes grow{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
+  /* Big moments ARRIVE smoothly (replaces v2.0 slam): slow ease-out scale
+     from 1.06 + blur, 1.8s. Delay follows the f1/f2/f3 stagger. */
+  @keyframes arriveIn{from{opacity:0;transform:scale(1.06);filter:blur(6px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+  .active .arrive{animation:arriveIn 1.8s cubic-bezier(.22,1,.36,1) both;transform-box:fill-box;transform-origin:center}
+  .active .f1.arrive{animation-delay:0s}
+  .active .f2.arrive{animation-delay:0.8s}
+  .active .f3.arrive{animation-delay:1.6s}
+  /* Continuous motion, v2.1: gentle breathing, not throbbing. Loops slowed
+     to 5–6s, smaller amplitude, ease-in-out. Orbits + clock hands stay linear. */
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes driftX{0%,100%{transform:translateX(0)}50%{transform:translateX(10px)}}
+  @keyframes driftXsm{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+  @keyframes bobY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.03);opacity:.92}}
+  @keyframes pulseOp{0%,100%{opacity:.45}50%{opacity:1}}
+  @keyframes dashFlow{0%{stroke-dashoffset:0}50%{stroke-dashoffset:-60}100%{stroke-dashoffset:-120}}
+  @keyframes growLoop{0%{transform:scaleX(0);opacity:0}12%{opacity:1}65%{transform:scaleX(1);opacity:1}85%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+  @keyframes sway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+  .active .orbit{animation:spin 26s linear infinite}
+  .active .orbitFast{animation:spin 12s linear infinite}
+  .active .tickhand{animation:spin 12s linear infinite}
+  .active .tickhandSlow{animation:spin 24s linear infinite}
+  .active .tickhandFast{animation:spin 6s linear infinite}
+  .active .drift{animation:driftX 6s ease-in-out infinite}
+  .active .driftSm{animation:driftXsm 6s ease-in-out infinite}
+  .active .bob{animation:bobY 6s ease-in-out infinite}
+  .active .breathe{animation:breathe 6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  .active .pulse{animation:pulseOp 5s ease-in-out infinite}
+  .active .flow{animation:dashFlow 3s ease-in-out infinite}
+  .active .growloop{animation:growLoop 6s ease-in-out infinite;transform-box:fill-box;transform-origin:left center}
+  .active .sway{animation:sway 8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  @keyframes contract{0%,100%{transform:scale(1)}50%{transform:scale(.86)}}
+  .active .contract{animation:contract 10s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center}
+  .caption{min-height:54px;padding:12px 2px 0;font-size:16px;line-height:1.55;color:#fff;transition:opacity .18s ease}
+  .caption b{color:#fff}
+  .caption .b{color:#7E9BFF}.caption .g{color:#6FCF97}
+  .controls{display:flex;gap:12px;align-items:center;margin-top:10px}
+  button{background:none;border:1px solid #555;color:#fff;border-radius:999px;padding:8px 16px;cursor:pointer;font-size:14px}
+  button:hover{border-color:#fff}
+  .progress{flex:1;height:2px;background:#222;cursor:pointer}
+  .progress i{display:block;height:100%;background:#fff;width:0%}
+  .time{font-size:12px;color:#9A9A9A;min-width:80px;text-align:right}
+  .note{font-size:12px;color:#9A9A9A;margin-top:14px;line-height:1.6}
+  .note b{color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Why 23 People Is Enough — The Birthday Paradox <span>— Median style, v1.1</span></h1>
+  <p class="sub">Video 04 in the series. Black background #000, one object in the centre, serif maths + sans headings, only 2 meaningful accents. Crossfade 0.45s, blur on the outgoing scene only (≤3px), incoming sharp. Median motion language — slow blur-in entrances, lines drawing on over 2.5s, gentle 5–6s breathing loops, at most 2 things moving at once, scene clock from performance.now() wall time. Captions stagger 0 / 0.8 / 1.6s. Voice: Muse TTS avocado_v2:vd2_quivering_oak, English, speed 80 (voice B). v1.1: denser visuals only (curve scene rebuilt as a true chart + table, 8 more scenes enriched); script, voice, timing and scene order identical to v1.0.</p>
+
+  <div class="stage">
+  <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="dotgrid" width="14" height="14" patternUnits="userSpaceOnUse">
+        <circle cx="7" cy="7" r="3" fill="#464845"/>
+      </pattern>
+      <pattern id="calgrid" width="12" height="12" patternUnits="userSpaceOnUse">
+        <rect x="1.5" y="1.5" width="9" height="9" fill="#212120" stroke="#464845" stroke-width="1"/>
+      </pattern>
+    </defs>
+    <!-- 1 -->
+    <g class="scene" id="s1">
+      <text x="40" y="48" class="eyebrow">WHY 23 PEOPLE IS ENOUGH</text>
+      <g class="f1 arrive"><text x="400" y="240" font-size="150" text-anchor="middle" class="math">23</text></g><g class="f2"><text x="400" y="300" font-size="20" text-anchor="middle" class="grey">in a room of just twenty-three people</text></g><g class="f3"><text x="400" y="338" font-size="18" text-anchor="middle" class="green">a shared birthday is more likely than not</text></g><circle cx="90" cy="392" r="4" fill="#464845"/><circle cx="118" cy="392" r="4" fill="#464845"/><circle cx="146" cy="392" r="4" fill="#464845"/><circle cx="174" cy="392" r="4" fill="#464845"/><circle cx="202" cy="392" r="4" fill="#464845"/><circle cx="230" cy="392" r="4" fill="#6FCF97"/><circle cx="258" cy="392" r="4" fill="#6FCF97"/><circle cx="286" cy="392" r="4" fill="#464845"/><circle cx="314" cy="392" r="4" fill="#464845"/><circle cx="342" cy="392" r="4" fill="#464845"/><circle cx="370" cy="392" r="4" fill="#464845"/><circle cx="398" cy="392" r="4" fill="#464845"/><circle cx="426" cy="392" r="4" fill="#464845"/><circle cx="454" cy="392" r="4" fill="#464845"/><circle cx="482" cy="392" r="4" fill="#464845"/><circle cx="510" cy="392" r="4" fill="#464845"/><circle cx="538" cy="392" r="4" fill="#464845"/><circle cx="566" cy="392" r="4" fill="#464845"/><circle cx="594" cy="392" r="4" fill="#464845"/><circle cx="622" cy="392" r="4" fill="#464845"/><circle cx="650" cy="392" r="4" fill="#464845"/><circle cx="678" cy="392" r="4" fill="#464845"/><circle cx="706" cy="392" r="4" fill="#464845"/>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 2 -->
+    <g class="scene" id="s2">
+      <text x="40" y="48" class="eyebrow">WHY 23 PEOPLE IS ENOUGH</text>
+      <g class="f1"><text x="400" y="120" font-size="20" text-anchor="middle" class="grey">most people guess</text></g><g class="f2"><text x="290" y="250" font-size="110" text-anchor="middle" class="math dim">180</text><line x1="195" y1="212" x2="385" y2="212" stroke="#9A9A9A" stroke-width="3"/><text x="290" y="300" font-size="15" text-anchor="middle" class="grey">the guess</text></g><text x="440" y="250" font-size="40" text-anchor="middle" class="grey">→</text><g class="f3 arrive"><text x="590" y="250" font-size="130" text-anchor="middle" class="math green">23</text><text x="590" y="300" font-size="15" text-anchor="middle" class="green">the answer</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 3 -->
+    <g class="scene" id="s3">
+      <text x="40" y="48" class="eyebrow">WHY 23 PEOPLE IS ENOUGH</text>
+      <g class="f1"><text x="40" y="136" font-size="16" class="grey">classroom</text><circle cx="200" cy="132" r="5" fill="#464845"/><circle cx="216" cy="132" r="5" fill="#464845"/><circle cx="232" cy="132" r="5" fill="#464845"/><circle cx="248" cy="132" r="5" fill="#464845"/><circle cx="264" cy="132" r="5" fill="#464845"/><circle cx="280" cy="132" r="5" fill="#464845"/><circle cx="296" cy="132" r="5" fill="#464845"/><circle cx="312" cy="132" r="5" fill="#464845"/><circle cx="328" cy="132" r="5" fill="#464845"/><circle cx="344" cy="132" r="5" fill="#464845"/><circle cx="360" cy="132" r="5" fill="#464845"/><circle cx="376" cy="132" r="5" fill="#464845"/><circle cx="392" cy="132" r="5" fill="#464845"/><circle cx="408" cy="132" r="5" fill="#464845"/><circle cx="424" cy="132" r="5" fill="#464845"/><circle cx="440" cy="132" r="5" fill="#464845"/><circle cx="456" cy="132" r="5" fill="#464845"/><circle cx="472" cy="132" r="5" fill="#464845"/><circle cx="488" cy="132" r="5" fill="#464845"/><circle cx="504" cy="132" r="5" fill="#464845"/><circle cx="520" cy="132" r="5" fill="#464845"/><circle cx="536" cy="132" r="5" fill="#464845"/><circle cx="552" cy="132" r="5" fill="#464845"/><circle cx="568" cy="132" r="5" fill="#464845"/><circle cx="584" cy="132" r="5" fill="#464845"/><circle cx="600" cy="132" r="5" fill="#464845"/><circle cx="616" cy="132" r="5" fill="#464845"/><circle cx="632" cy="132" r="5" fill="#464845"/><circle cx="648" cy="132" r="5" fill="#464845"/><circle cx="664" cy="132" r="5" fill="#464845"/><text x="700" y="136" font-size="16" class="grey">30</text></g><g class="f2"><text x="40" y="226" font-size="16" class="grey">party</text><circle cx="200" cy="222" r="5" fill="#464845"/><circle cx="216" cy="222" r="5" fill="#464845"/><circle cx="232" cy="222" r="5" fill="#464845"/><circle cx="248" cy="222" r="5" fill="#464845"/><circle cx="264" cy="222" r="5" fill="#464845"/><circle cx="280" cy="222" r="5" fill="#464845"/><circle cx="296" cy="222" r="5" fill="#464845"/><circle cx="312" cy="222" r="5" fill="#464845"/><circle cx="328" cy="222" r="5" fill="#464845"/><circle cx="344" cy="222" r="5" fill="#464845"/><circle cx="360" cy="222" r="5" fill="#464845"/><circle cx="376" cy="222" r="5" fill="#464845"/><circle cx="392" cy="222" r="5" fill="#464845"/><circle cx="408" cy="222" r="5" fill="#464845"/><circle cx="424" cy="222" r="5" fill="#464845"/><circle cx="440" cy="222" r="5" fill="#464845"/><circle cx="456" cy="222" r="5" fill="#464845"/><circle cx="472" cy="222" r="5" fill="#464845"/><circle cx="488" cy="222" r="5" fill="#464845"/><circle cx="504" cy="222" r="5" fill="#464845"/><circle cx="520" cy="222" r="5" fill="#464845"/><circle cx="536" cy="222" r="5" fill="#464845"/><circle cx="552" cy="222" r="5" fill="#464845"/><text x="700" y="226" font-size="16" class="grey">23</text></g><g class="f3"><text x="40" y="316" font-size="16" class="grey">football team</text><circle cx="200" cy="312" r="5" fill="#464845"/><circle cx="216" cy="312" r="5" fill="#464845"/><circle cx="232" cy="312" r="5" fill="#464845"/><circle cx="248" cy="312" r="5" fill="#464845"/><circle cx="264" cy="312" r="5" fill="#464845"/><circle cx="280" cy="312" r="5" fill="#464845"/><circle cx="296" cy="312" r="5" fill="#464845"/><circle cx="312" cy="312" r="5" fill="#464845"/><circle cx="328" cy="312" r="5" fill="#464845"/><circle cx="344" cy="312" r="5" fill="#464845"/><circle cx="360" cy="312" r="5" fill="#464845"/><circle cx="376" cy="312" r="5" fill="#464845"/><circle cx="392" cy="312" r="5" fill="#464845"/><circle cx="408" cy="312" r="5" fill="#464845"/><circle cx="424" cy="312" r="5" fill="#464845"/><circle cx="440" cy="312" r="5" fill="#464845"/><circle cx="456" cy="312" r="5" fill="#464845"/><circle cx="472" cy="312" r="5" fill="#464845"/><circle cx="488" cy="312" r="5" fill="#464845"/><circle cx="504" cy="312" r="5" fill="#464845"/><circle cx="520" cy="312" r="5" fill="#464845"/><circle cx="536" cy="312" r="5" fill="#464845"/><circle cx="552" cy="312" r="5" fill="#464845"/><text x="700" y="316" font-size="16" class="grey">23</text></g><text x="400" y="380" font-size="18" text-anchor="middle" class="grey">twenty-three people is enough — anywhere</text>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 4 -->
+    <g class="scene" id="s4">
+      <text x="40" y="48" class="eyebrow">PART 1 — THE WRONG QUESTION</text>
+      <g class="f1"><circle cx="400.0" cy="115.0" r="7" fill="#464845"/><circle cx="447.5" cy="127.7" r="7" fill="#464845"/><circle cx="482.3" cy="162.5" r="7" fill="#464845"/><circle cx="495.0" cy="210.0" r="7" fill="#464845"/><circle cx="482.3" cy="257.5" r="7" fill="#464845"/><circle cx="447.5" cy="292.3" r="7" fill="#464845"/><circle cx="400.0" cy="305.0" r="7" fill="#464845"/><circle cx="352.5" cy="292.3" r="7" fill="#464845"/><circle cx="317.7" cy="257.5" r="7" fill="#464845"/><circle cx="305.0" cy="210.0" r="7" fill="#464845"/><circle cx="317.7" cy="162.5" r="7" fill="#464845"/><circle cx="352.5" cy="127.7" r="7" fill="#464845"/><circle cx="400" cy="210" r="13" fill="#7E9BFF" class="pulse"/><text x="400" y="215" font-size="11" text-anchor="middle" class="ink">you</text></g><g class="f2"><text x="400" y="350" font-size="26" text-anchor="middle" class="math">will someone share MY birthday?</text></g><g class="f3"><text x="400" y="390" font-size="18" text-anchor="middle" class="grey">that is the wrong question</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 5 -->
+    <g class="scene" id="s5">
+      <text x="40" y="48" class="eyebrow">PART 1 — THE WRONG QUESTION</text>
+      <rect x="140" y="150" width="520" height="140" fill="url(#dotgrid)"/><g class="f1"><circle cx="400" cy="220" r="13" fill="#7E9BFF" class="pulse"/><text x="400" y="215" font-size="11" text-anchor="middle" class="ink">you</text></g><g class="f2"><text x="400" y="340" font-size="30" text-anchor="middle" class="math">253 other people</text></g><g class="f3"><text x="400" y="380" font-size="18" text-anchor="middle" class="grey">more than ten times as many — all hoping to match one day</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 6 -->
+    <g class="scene" id="s6">
+      <text x="40" y="48" class="eyebrow">PART 1 — THE WRONG QUESTION</text>
+      <g class="f1 arrive"><text x="400" y="180" font-size="72" text-anchor="middle" class="math">1 / 365</text></g><g class="f2"><rect x="120" y="220" width="560" height="48" fill="url(#calgrid)"/><rect x="120" y="220" width="12" height="12" fill="#6FCF97"/><text x="400" y="310" font-size="18" text-anchor="middle" class="grey">one chance — one day out of three hundred and sixty-five</text></g><g class="f3"><text x="400" y="360" font-size="18" text-anchor="middle" class="grey">it adds up slowly</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 7 -->
+    <g class="scene" id="s7">
+      <text x="40" y="48" class="eyebrow">PART 1 — THE WRONG QUESTION</text>
+      <rect x="90" y="150" width="280" height="170" rx="10" fill="#212120"/><rect x="430" y="150" width="280" height="170" rx="10" fill="#212120"/><g class="f1"><circle cx="190" cy="225" r="14" fill="#6FCF97"/><circle cx="270" cy="225" r="14" fill="#6FCF97"/><line x1="204" y1="225" x2="256" y2="225" stroke="#6FCF97" stroke-width="2"/><text x="230" y="290" font-size="17" text-anchor="middle" class="green">ANY two people</text></g><g class="f2"><circle cx="530" cy="225" r="14" fill="#7E9BFF"/><circle cx="610" cy="225" r="14" fill="#464845"/><line x1="544" y1="225" x2="596" y2="225" stroke="#9A9A9A" stroke-width="2"/><text x="570" y="290" font-size="17" text-anchor="middle" class="blue">YOU + someone</text></g><g class="f3"><text x="400" y="370" font-size="18" text-anchor="middle" class="grey">the real question is different</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 8 -->
+    <g class="scene" id="s8">
+      <text x="40" y="48" class="eyebrow">PART 2 — COUNT THE PAIRS</text>
+      <g class="f1 arrive"><text x="400" y="220" font-size="44" text-anchor="middle" class="math">23 + 22 + 21 + … + 1</text></g><g class="f2"><text x="400" y="290" font-size="18" text-anchor="middle" class="grey">every pair counted once — nobody counted twice</text></g><g class="f3"><text x="400" y="340" font-size="18" text-anchor="middle" class="grey">person 1 has 22 partners · person 2 has 21 new ones · and so on</text></g><line x1="200" y1="370" x2="600" y2="370" stroke="#9A9A9A" stroke-width="1.5"/><text x="200" y="392" font-size="13" text-anchor="middle" class="grey">22</text><text x="400" y="392" font-size="13" text-anchor="middle" class="grey">21</text><text x="600" y="392" font-size="13" text-anchor="middle" class="grey">1</text>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 9 -->
+    <g class="scene" id="s9">
+      <text x="40" y="48" class="eyebrow">PART 2 — COUNT THE PAIRS</text>
+      <rect x="110" y="150" width="580" height="120" rx="10" fill="#141414"/><g class="f1 arrive"><text x="400" y="235" font-size="72" text-anchor="middle" class="math">23 × 22 ÷ 2 = <tspan id="count253" fill="#6FCF97">253</tspan></text></g><g class="f2"><rect x="176" y="252" width="448" height="4" fill="#6FCF97" class="growloop"/></g><g class="f3"><text x="400" y="310" font-size="20" text-anchor="middle" class="grey">two hundred and fifty-three pairs — two hundred and fifty-three chances</text></g><text x="400" y="350" font-size="18" text-anchor="middle" class="grey">pairs</text>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 10 -->
+    <g class="scene" id="s10">
+      <text x="40" y="48" class="eyebrow">PART 2 — COUNT THE PAIRS</text>
+      <rect x="140" y="150" width="520" height="130" fill="url(#dotgrid)"/><g class="f1"><circle cx="360" cy="215" r="9" fill="#6FCF97"/><circle cx="440" cy="215" r="9" fill="#6FCF97"/><line x1="369" y1="215" x2="431" y2="215" stroke="#6FCF97" stroke-width="2"/></g><g class="f2"><text x="400" y="330" font-size="30" text-anchor="middle" class="math">each pair: 1 in 365</text></g><g class="f3"><text x="400" y="370" font-size="18" text-anchor="middle" class="grey">small on its own — but there are two hundred and fifty-three of them</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 11 -->
+    <g class="scene" id="s11">
+      <text x="40" y="48" class="eyebrow">PART 2 — COUNT THE PAIRS</text>
+      <rect x="80" y="160" width="300" height="160" rx="10" fill="#212120"/><rect x="420" y="160" width="300" height="160" rx="10" fill="#212120"/><g class="f1"><text x="230" y="240" font-size="64" text-anchor="middle" class="math green">253</text><text x="230" y="280" font-size="17" text-anchor="middle" class="grey">pairs</text></g><g class="f2"><text x="570" y="240" font-size="64" text-anchor="middle" class="math blue">253</text><text x="570" y="280" font-size="17" text-anchor="middle" class="grey">other people</text></g><g class="f3"><text x="400" y="370" font-size="18" text-anchor="middle" class="grey">same number, two different questions</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 12 -->
+    <g class="scene" id="s12">
+      <text x="40" y="48" class="eyebrow">PART 2 — COUNT THE PAIRS</text>
+      <rect x="90" y="140" width="280" height="180" rx="10" fill="#141414"/><rect x="430" y="140" width="280" height="180" rx="10" fill="#141414"/><g class="f1"><text x="230" y="180" font-size="20" text-anchor="middle" class="math">23 vs 1</text><circle cx="140" cy="205" r="6" fill="#464845"/><circle cx="166" cy="205" r="6" fill="#464845"/><circle cx="192" cy="205" r="6" fill="#464845"/><circle cx="218" cy="205" r="6" fill="#464845"/><circle cx="244" cy="205" r="6" fill="#464845"/><circle cx="270" cy="205" r="6" fill="#464845"/><circle cx="140" cy="231" r="6" fill="#464845"/><circle cx="166" cy="231" r="6" fill="#464845"/><circle cx="192" cy="231" r="6" fill="#464845"/><circle cx="218" cy="231" r="6" fill="#464845"/><circle cx="244" cy="231" r="6" fill="#464845"/><circle cx="270" cy="231" r="6" fill="#464845"/><circle cx="140" cy="257" r="6" fill="#464845"/><circle cx="166" cy="257" r="6" fill="#464845"/><circle cx="192" cy="257" r="6" fill="#464845"/><circle cx="218" cy="257" r="6" fill="#464845"/><circle cx="244" cy="257" r="6" fill="#464845"/><circle cx="270" cy="257" r="6" fill="#464845"/><circle cx="140" cy="283" r="6" fill="#464845"/><circle cx="166" cy="283" r="6" fill="#464845"/><circle cx="192" cy="283" r="6" fill="#464845"/><circle cx="218" cy="283" r="6" fill="#464845"/><circle cx="244" cy="283" r="6" fill="#464845"/><text x="230" y="355" font-size="15" text-anchor="middle" class="grey">you against the room</text></g><g class="f2"><text x="570" y="180" font-size="20" text-anchor="middle" class="math">253 vs 253</text><rect x="470" y="210" width="200" height="18" fill="#6FCF97"/><rect x="470" y="245" width="200" height="18" fill="#7E9BFF"/><text x="570" y="300" font-size="15" text-anchor="middle" class="grey">any pair against any pair</text></g><g class="f3"><text x="400" y="395" font-size="18" text-anchor="middle" class="grey">two kinds of comparison — only one of them is the paradox</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 13 -->
+<g class="scene" id="s13"><text x="40" y="48" class="eyebrow">PART 3 — THE MATHS</text><g class="f1"><text x="400" y="95" font-size="15" text-anchor="middle" class="grey">23 people, no match</text><circle cx="110" cy="120" r="5" fill="#464845"/><circle cx="136" cy="120" r="5" fill="#464845"/><circle cx="162" cy="120" r="5" fill="#464845"/><circle cx="188" cy="120" r="5" fill="#464845"/><circle cx="214" cy="120" r="5" fill="#464845"/><circle cx="240" cy="120" r="5" fill="#464845"/><circle cx="266" cy="120" r="5" fill="#464845"/><circle cx="292" cy="120" r="5" fill="#464845"/><circle cx="318" cy="120" r="5" fill="#464845"/><circle cx="344" cy="120" r="5" fill="#464845"/><circle cx="370" cy="120" r="5" fill="#464845"/><circle cx="396" cy="120" r="5" fill="#464845"/><circle cx="422" cy="120" r="5" fill="#464845"/><circle cx="448" cy="120" r="5" fill="#464845"/><circle cx="474" cy="120" r="5" fill="#464845"/><circle cx="500" cy="120" r="5" fill="#464845"/><circle cx="526" cy="120" r="5" fill="#464845"/><circle cx="552" cy="120" r="5" fill="#464845"/><circle cx="578" cy="120" r="5" fill="#464845"/><circle cx="604" cy="120" r="5" fill="#464845"/><circle cx="630" cy="120" r="5" fill="#464845"/><circle cx="656" cy="120" r="5" fill="#464845"/><circle cx="682" cy="120" r="5" fill="#464845"/><line x1="390" y1="112" x2="428" y2="128" stroke="#9A9A9A" stroke-width="2"/><line x1="390" y1="128" x2="428" y2="112" stroke="#9A9A9A" stroke-width="2"/></g><g class="f2 arrive"><text x="400" y="250" font-size="130" text-anchor="middle" class="math">?</text></g><g class="f2"><text x="400" y="310" font-size="26" text-anchor="middle" class="math">what if NOBODY shares?</text></g><g class="f3"><text x="400" y="350" font-size="18" text-anchor="middle" class="grey">count the opposite — then flip it</text></g><path d="M 300 380 H 500" stroke="#9A9A9A" stroke-width="1.5" stroke-dasharray="5 7" fill="none"/><text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text></g>
+    <!-- 14 -->
+    <g class="scene" id="s14">
+      <text x="40" y="48" class="eyebrow">PART 3 — THE MATHS</text>
+      <g class="f1 arrive"><text x="400" y="220" font-size="88" text-anchor="middle" class="math">365 / 365</text></g><g class="f2"><text x="400" y="280" font-size="20" text-anchor="middle" class="grey">person one — any day is free</text></g><g class="f3"><rect x="180" y="310" width="440" height="36" fill="url(#calgrid)"/><text x="400" y="380" font-size="15" text-anchor="middle" class="grey">all three hundred and sixty-five days open</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 15 -->
+    <g class="scene" id="s15">
+      <text x="40" y="48" class="eyebrow">PART 3 — THE MATHS</text>
+      <g class="f1 arrive"><text x="400" y="220" font-size="88" text-anchor="middle" class="math">364 / 365</text></g><g class="f2"><text x="400" y="280" font-size="20" text-anchor="middle" class="grey">person two — any day except the first person’s</text></g><g class="f3"><rect x="180" y="310" width="440" height="36" fill="url(#calgrid)"/><rect x="180" y="310" width="12" height="12" fill="#212120" stroke="#fff" stroke-width="1.5"/><line x1="180" y1="310" x2="192" y2="322" stroke="#fff" stroke-width="1.5"/><line x1="192" y1="310" x2="180" y2="322" stroke="#fff" stroke-width="1.5"/><text x="400" y="380" font-size="15" text-anchor="middle" class="grey">one day taken</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 16 -->
+    <g class="scene" id="s16">
+      <text x="40" y="48" class="eyebrow">PART 3 — THE MATHS</text>
+      <g class="f1"><line x1="200" y1="145" x2="600" y2="145" stroke="#9A9A9A" stroke-width="1.5"/><line x1="200" y1="141" x2="200" y2="149" stroke="#9A9A9A" stroke-width="1.5"/><line x1="600" y1="141" x2="600" y2="149" stroke="#9A9A9A" stroke-width="1.5"/><text x="610" y="149" font-size="13" class="grey">23 factors</text><text x="400" y="190" font-size="44" text-anchor="middle" class="math">365 × 364 × … × 343</text></g><g class="f2"><line x1="150" y1="215" x2="650" y2="215" class="thin"/><text x="400" y="280" font-size="44" text-anchor="middle" class="math">365<tspan baseline-shift="super" font-size="28">23</tspan></text></g><g class="f3"><text x="400" y="340" font-size="18" text-anchor="middle" class="grey">twenty-three factors on top — the 23rd person avoids twenty-two days</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 17 -->
+    <g class="scene" id="s17">
+      <text x="40" y="48" class="eyebrow">PART 3 — THE MATHS</text>
+      <g class="f1 arrive"><text x="400" y="200" font-size="88" text-anchor="middle" class="math grey">49.3%</text></g><g class="f2"><rect x="120" y="250" width="560" height="24" fill="#212120"/><rect x="120" y="250" width="276" height="24" fill="#464845"/><line x1="400" y1="240" x2="400" y2="284" stroke="#6FCF97" stroke-width="2" stroke-dasharray="5 5"/><text x="400" y="310" font-size="15" text-anchor="middle" class="green">50% — the line</text></g><g class="f3"><text x="400" y="360" font-size="18" text-anchor="middle" class="grey">the chance nobody shares — less than half</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 18 -->
+    <g class="scene" id="s18">
+      <text x="40" y="48" class="eyebrow">PART 3 — THE MATHS</text>
+      <rect x="110" y="150" width="580" height="120" rx="10" fill="#141414"/><g class="f1 arrive"><text x="400" y="235" font-size="72" text-anchor="middle" class="math">100 − 49.3 = <tspan fill="#6FCF97">50.7%</tspan></text></g><g class="f2"><rect x="176" y="252" width="448" height="4" fill="#6FCF97" class="growloop"/></g><g class="f3"><text x="400" y="310" font-size="20" text-anchor="middle" class="grey">flip it — more likely than not</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 19 -->
+<g class="scene" id="s19"><text x="40" y="48" class="eyebrow">PART 4 — THE CURVE</text><g class="f1"><line x1="60" y1="330" x2="440" y2="330" class="thinG"/><line x1="60" y1="330" x2="60" y2="80" class="thinG"/><line x1="54" y1="330" x2="60" y2="330" class="thinG"/><text x="48" y="334" font-size="12" text-anchor="end" class="grey">0%</text><line x1="54" y1="268" x2="60" y2="268" class="thinG"/><text x="48" y="272" font-size="12" text-anchor="end" class="grey">25%</text><line x1="54" y1="205" x2="60" y2="205" class="thinG"/><text x="48" y="209" font-size="12" text-anchor="end" class="grey">50%</text><line x1="54" y1="143" x2="60" y2="143" class="thinG"/><text x="48" y="147" font-size="12" text-anchor="end" class="grey">75%</text><line x1="54" y1="80" x2="60" y2="80" class="thinG"/><text x="48" y="84" font-size="12" text-anchor="end" class="grey">100%</text><line x1="60" y1="330" x2="60" y2="336" class="thinG"/><text x="60" y="350" font-size="12" text-anchor="middle" class="grey">0</text><line x1="114" y1="330" x2="114" y2="336" class="thinG"/><text x="114" y="350" font-size="12" text-anchor="middle" class="grey">10</text><line x1="169" y1="330" x2="169" y2="336" class="thinG"/><text x="169" y="350" font-size="12" text-anchor="middle" class="grey">20</text><line x1="223" y1="330" x2="223" y2="336" class="thinG"/><text x="223" y="350" font-size="12" text-anchor="middle" class="grey">30</text><line x1="277" y1="330" x2="277" y2="336" class="thinG"/><text x="277" y="350" font-size="12" text-anchor="middle" class="grey">40</text><line x1="331" y1="330" x2="331" y2="336" class="thinG"/><text x="331" y="350" font-size="12" text-anchor="middle" class="grey">50</text><line x1="386" y1="330" x2="386" y2="336" class="thinG"/><text x="386" y="350" font-size="12" text-anchor="middle" class="grey">60</text><line x1="440" y1="330" x2="440" y2="336" class="thinG"/><text x="440" y="350" font-size="12" text-anchor="middle" class="grey">70</text><line x1="60" y1="205" x2="440" y2="205" stroke="#6FCF97" stroke-width="1.5" stroke-dasharray="6 6"/><path d="M 60.0 330.0 L 70.9 329.3 L 81.7 325.9 L 92.6 319.9 L 103.4 311.4 L 114.3 300.8 L 125.1 288.2 L 136.0 274.2 L 146.9 259.1 L 157.7 243.3 L 168.6 227.1 L 179.4 211.1 L 190.3 195.4 L 201.1 180.4 L 212.0 166.4 L 222.9 153.4 L 233.7 141.7 L 244.6 131.2 L 255.4 122.0 L 266.3 114.0 L 277.1 107.2 L 288.0 101.5 L 298.9 96.8 L 309.7 92.9 L 320.6 89.9 L 331.4 87.4 L 342.3 85.5 L 353.1 84.0 L 364.0 82.9 L 374.9 82.1 L 385.7 81.5 L 396.6 81.0 L 407.4 80.7 L 418.3 80.5 L 429.1 80.3 L 440.0 80.2" class="thin draw" pathLength="100" fill="none"/></g><g class="f2"><circle cx="114.3" cy="300.8" r="5" fill="#fff"/><circle cx="141.4" cy="266.8" r="5" fill="#7E9BFF"/><circle cx="168.6" cy="227.1" r="5" fill="#fff"/><circle cx="184.9" cy="203.2" r="7" fill="#6FCF97" class="pulse"/><circle cx="222.9" cy="153.4" r="5" fill="#fff"/><circle cx="277.1" cy="107.2" r="5" fill="#fff"/><circle cx="331.4" cy="87.4" r="6" fill="#6FCF97"/><circle cx="440" cy="80.2" r="6" fill="#6FCF97"/><rect x="76" y="308" width="76" height="20" fill="#141414"/><text x="114" y="322" font-size="13" text-anchor="middle" class="grey">10 · 11.7%</text><rect x="140" y="172" width="90" height="20" fill="#141414"/><text x="185" y="186" font-size="14" text-anchor="middle" class="green">23 · 50.7%</text><rect x="286" y="58" width="90" height="20" fill="#141414"/><text x="331" y="72" font-size="13" text-anchor="middle" class="green">50 · 97.0%</text><rect x="396" y="90" width="80" height="20" fill="#141414"/><text x="436" y="104" font-size="13" text-anchor="middle" class="green">70 · 99.9%</text></g><g class="f3"><text x="500" y="86" font-size="13" class="grey">people</text><text x="730" y="86" font-size="13" text-anchor="end" class="grey">chance</text><line x1="480" y1="96" x2="750" y2="96" stroke="#333" stroke-width="1"/><rect x="480" y="182" width="270" height="28" fill="#212120"/><text x="500" y="112" font-size="15" class="grey">10 people</text><text x="730" y="112" font-size="15" text-anchor="end" class="math">11.7%</text><text x="500" y="140" font-size="15" class="grey">15 people</text><text x="730" y="140" font-size="15" text-anchor="end" class="math">25.3%</text><text x="500" y="168" font-size="15" class="grey">20 people</text><text x="730" y="168" font-size="15" text-anchor="end" class="math">41.1%</text><text x="500" y="196" font-size="15" class="green">23 people</text><text x="730" y="196" font-size="15" text-anchor="end" class="green">50.7%</text><text x="500" y="224" font-size="15" class="grey">30 people</text><text x="730" y="224" font-size="15" text-anchor="end" class="math">70.6%</text><text x="500" y="252" font-size="15" class="grey">40 people</text><text x="730" y="252" font-size="15" text-anchor="end" class="math">89.1%</text><text x="500" y="280" font-size="15" class="grey">50 people</text><text x="730" y="280" font-size="15" text-anchor="end" class="math">97.0%</text><text x="500" y="308" font-size="15" class="grey">70 people</text><text x="730" y="308" font-size="15" text-anchor="end" class="math">99.9%</text><text x="615" y="340" font-size="13" text-anchor="middle" class="green">23 — the tipping point</text><text x="400" y="390" font-size="18" text-anchor="middle" class="grey">the curve starts slow</text></g><text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text></g>
+    <!-- 20 -->
+    <g class="scene" id="s20">
+      <text x="40" y="48" class="eyebrow">PART 4 — THE CURVE</text>
+      <g class="f1"><line x1="120" y1="110" x2="680" y2="110" stroke="#6FCF97" stroke-width="1.5" stroke-dasharray="6 6"/><text x="680" y="100" font-size="15" text-anchor="end" class="green">50% — the line</text><rect x="270" y="224" width="260" height="12" rx="6" fill="#464845" class="sway"/><polygon points="400,236 388,262 412,262" fill="#212120"/></g><g class="f2"><rect x="270" y="196" width="90" height="28" rx="6" fill="#212120"/><rect x="440" y="196" width="90" height="28" rx="6" fill="#212120"/><text x="315" y="176" font-size="16" text-anchor="middle" class="grey">20 · 41.1%</text><text x="485" y="176" font-size="16" text-anchor="middle" class="blue">22 · 47.6%</text></g><g class="f3"><text x="315" y="300" font-size="15" text-anchor="middle" class="grey">underdog</text><text x="485" y="300" font-size="15" text-anchor="middle" class="green">favourite</text><text x="400" y="320" font-size="18" text-anchor="middle" class="grey">then it tips — almost there</text></g><line x1="320" y1="268" x2="480" y2="268" stroke="#9A9A9A" stroke-width="1.5"/>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 21 -->
+    <g class="scene" id="s21">
+      <text x="40" y="48" class="eyebrow">PART 4 — THE CURVE</text>
+      <rect x="110" y="130" width="580" height="120" rx="10" fill="#141414"/><g class="f1 arrive"><text x="400" y="225" font-size="120" text-anchor="middle" class="math green">50.7%</text></g><g class="f2"><text x="290" y="98" font-size="16" text-anchor="middle" class="grey">22 people — 47.6%</text><text x="400" y="98" font-size="16" text-anchor="middle" class="grey">→</text><text x="510" y="98" font-size="16" text-anchor="middle" class="green">23 people — 50.7%</text><line x1="120" y1="300" x2="680" y2="300" stroke="#6FCF97" stroke-width="2" stroke-dasharray="6 6"/><text x="680" y="290" font-size="15" text-anchor="end" class="green">50% — the line</text></g><g class="f3"><text x="400" y="350" font-size="20" text-anchor="middle" class="grey">crossed at twenty-three people</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 22 -->
+    <g class="scene" id="s22">
+      <text x="40" y="48" class="eyebrow">PART 4 — THE CURVE</text>
+      <g class="f1"><rect x="150" y="333" width="80" height="47" fill="#464845"/><rect x="260" y="279" width="80" height="101" fill="#464845"/><rect x="370" y="216" width="80" height="164" fill="#464845"/><rect x="480" y="190" width="80" height="190" fill="#464845"/><rect x="590" y="177" width="80" height="203" fill="#6FCF97"/></g><g class="f2"><text x="190" y="320" font-size="14" text-anchor="middle" class="grey">11.7%</text><text x="300" y="266" font-size="14" text-anchor="middle" class="grey">25.3%</text><text x="410" y="203" font-size="14" text-anchor="middle" class="grey">41.1%</text><text x="520" y="177" font-size="14" text-anchor="middle" class="grey">47.6%</text><text x="630" y="164" font-size="14" text-anchor="middle" class="green">50.7%</text></g><g class="f3"><text x="400" y="425" font-size="18" text-anchor="middle" class="grey">every new person adds more pairs than the last</text></g><text x="190" y="400" font-size="13" text-anchor="middle" class="grey">10</text><text x="300" y="400" font-size="13" text-anchor="middle" class="grey">15</text><text x="410" y="400" font-size="13" text-anchor="middle" class="grey">20</text><text x="520" y="400" font-size="13" text-anchor="middle" class="grey">22</text><text x="630" y="400" font-size="13" text-anchor="middle" class="grey">23</text>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 23 -->
+    <g class="scene" id="s23">
+      <text x="40" y="48" class="eyebrow">PART 4 — THE CURVE</text>
+      <g class="f1"><rect x="180" y="168" width="100" height="212" fill="#464845"/><rect x="360" y="113" width="100" height="267" fill="#464845"/><rect x="540" y="89" width="100" height="291" fill="#6FCF97"/></g><g class="f2"><text x="230" y="155" font-size="16" text-anchor="middle" class="grey">70.6%</text><text x="410" y="100" font-size="16" text-anchor="middle" class="grey">89.1%</text><text x="590" y="76" font-size="16" text-anchor="middle" class="green">97.0%</text></g><g class="f3"><text x="400" y="425" font-size="18" text-anchor="middle" class="grey">almost certain by fifty</text></g><text x="230" y="400" font-size="13" text-anchor="middle" class="grey">30 people</text><text x="410" y="400" font-size="13" text-anchor="middle" class="grey">40 people</text><text x="590" y="400" font-size="13" text-anchor="middle" class="grey">50 people</text>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 24 -->
+    <g class="scene" id="s24">
+      <text x="40" y="48" class="eyebrow">PART 4 — THE CURVE</text>
+      <rect x="110" y="130" width="580" height="130" rx="10" fill="#141414"/><g class="f1 arrive"><text x="400" y="230" font-size="120" text-anchor="middle" class="math green">99.9%</text></g><g class="f2"><text x="290" y="98" font-size="16" text-anchor="middle" class="grey">23 people — 50.7%</text><text x="400" y="98" font-size="16" text-anchor="middle" class="grey">→</text><text x="510" y="98" font-size="16" text-anchor="middle" class="green">70 people — 99.9%</text><text x="400" y="290" font-size="20" text-anchor="middle" class="grey">at seventy people</text></g><g class="f3"><circle cx="80.0" cy="385" r="3.5" fill="#464845"/><circle cx="89.5" cy="385" r="3.5" fill="#464845"/><circle cx="99.0" cy="385" r="3.5" fill="#464845"/><circle cx="108.5" cy="385" r="3.5" fill="#464845"/><circle cx="118.0" cy="385" r="3.5" fill="#464845"/><circle cx="127.5" cy="385" r="3.5" fill="#464845"/><circle cx="137.0" cy="385" r="3.5" fill="#464845"/><circle cx="146.5" cy="385" r="3.5" fill="#464845"/><circle cx="156.0" cy="385" r="3.5" fill="#464845"/><circle cx="165.5" cy="385" r="3.5" fill="#464845"/><circle cx="175.0" cy="385" r="3.5" fill="#464845"/><circle cx="184.5" cy="385" r="3.5" fill="#464845"/><circle cx="194.0" cy="385" r="3.5" fill="#464845"/><circle cx="203.5" cy="385" r="3.5" fill="#464845"/><circle cx="213.0" cy="385" r="3.5" fill="#464845"/><circle cx="222.5" cy="385" r="3.5" fill="#464845"/><circle cx="232.0" cy="385" r="3.5" fill="#464845"/><circle cx="241.5" cy="385" r="3.5" fill="#464845"/><circle cx="251.0" cy="385" r="3.5" fill="#464845"/><circle cx="260.5" cy="385" r="3.5" fill="#464845"/><circle cx="270.0" cy="385" r="3.5" fill="#464845"/><circle cx="279.5" cy="385" r="3.5" fill="#464845"/><circle cx="289.0" cy="385" r="3.5" fill="#464845"/><circle cx="298.5" cy="385" r="3.5" fill="#464845"/><circle cx="308.0" cy="385" r="3.5" fill="#464845"/><circle cx="317.5" cy="385" r="3.5" fill="#464845"/><circle cx="327.0" cy="385" r="3.5" fill="#464845"/><circle cx="336.5" cy="385" r="3.5" fill="#464845"/><circle cx="346.0" cy="385" r="3.5" fill="#464845"/><circle cx="355.5" cy="385" r="3.5" fill="#464845"/><circle cx="365.0" cy="385" r="3.5" fill="#464845"/><circle cx="374.5" cy="385" r="3.5" fill="#464845"/><circle cx="384.0" cy="385" r="3.5" fill="#464845"/><circle cx="393.5" cy="385" r="3.5" fill="#6FCF97"/><circle cx="403.0" cy="385" r="3.5" fill="#6FCF97"/><circle cx="412.5" cy="385" r="3.5" fill="#464845"/><circle cx="422.0" cy="385" r="3.5" fill="#464845"/><circle cx="431.5" cy="385" r="3.5" fill="#464845"/><circle cx="441.0" cy="385" r="3.5" fill="#464845"/><circle cx="450.5" cy="385" r="3.5" fill="#464845"/><circle cx="460.0" cy="385" r="3.5" fill="#464845"/><circle cx="469.5" cy="385" r="3.5" fill="#464845"/><circle cx="479.0" cy="385" r="3.5" fill="#464845"/><circle cx="488.5" cy="385" r="3.5" fill="#464845"/><circle cx="498.0" cy="385" r="3.5" fill="#464845"/><circle cx="507.5" cy="385" r="3.5" fill="#464845"/><circle cx="517.0" cy="385" r="3.5" fill="#464845"/><circle cx="526.5" cy="385" r="3.5" fill="#464845"/><circle cx="536.0" cy="385" r="3.5" fill="#464845"/><circle cx="545.5" cy="385" r="3.5" fill="#464845"/><circle cx="555.0" cy="385" r="3.5" fill="#464845"/><circle cx="564.5" cy="385" r="3.5" fill="#464845"/><circle cx="574.0" cy="385" r="3.5" fill="#464845"/><circle cx="583.5" cy="385" r="3.5" fill="#464845"/><circle cx="593.0" cy="385" r="3.5" fill="#464845"/><circle cx="602.5" cy="385" r="3.5" fill="#464845"/><circle cx="612.0" cy="385" r="3.5" fill="#464845"/><circle cx="621.5" cy="385" r="3.5" fill="#464845"/><circle cx="631.0" cy="385" r="3.5" fill="#464845"/><circle cx="640.5" cy="385" r="3.5" fill="#464845"/><circle cx="650.0" cy="385" r="3.5" fill="#464845"/><circle cx="659.5" cy="385" r="3.5" fill="#464845"/><circle cx="669.0" cy="385" r="3.5" fill="#464845"/><circle cx="678.5" cy="385" r="3.5" fill="#464845"/><circle cx="688.0" cy="385" r="3.5" fill="#464845"/><circle cx="697.5" cy="385" r="3.5" fill="#464845"/><circle cx="707.0" cy="385" r="3.5" fill="#464845"/><circle cx="716.5" cy="385" r="3.5" fill="#464845"/><circle cx="726.0" cy="385" r="3.5" fill="#464845"/><circle cx="735.5" cy="385" r="3.5" fill="#464845"/><text x="400" y="330" font-size="18" text-anchor="middle" class="grey">as certain as anything gets</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 25 -->
+    <g class="scene" id="s25">
+      <text x="40" y="48" class="eyebrow">PART 4 — THE CURVE</text>
+      <g class="f1"><line x1="120" y1="380" x2="680" y2="380" class="thinG"/><line x1="120" y1="380" x2="120" y2="90" class="thinG"/><line x1="114" y1="330" x2="120" y2="330" class="thinG"/><text x="108" y="334" font-size="12" text-anchor="end" class="grey">0%</text><line x1="114" y1="205" x2="120" y2="205" class="thinG"/><text x="108" y="209" font-size="12" text-anchor="end" class="grey">50%</text><line x1="114" y1="80" x2="120" y2="80" class="thinG"/><text x="108" y="84" font-size="12" text-anchor="end" class="grey">100%</text><path d="M 120 375 C 250 375, 300 300, 400 220 S 550 95, 680 90" class="thin draw" pathLength="100" fill="none"/></g><g class="f2"><circle cx="200" cy="372" r="7" fill="#fff"/><circle cx="400" cy="220" r="7" fill="#7E9BFF" class="pulse"/><circle cx="600" cy="108" r="7" fill="#6FCF97"/><text x="200" y="400" font-size="13" text-anchor="middle" class="grey">10</text><text x="400" y="200" font-size="13" text-anchor="middle" class="blue">23</text><text x="600" y="88" font-size="13" text-anchor="middle" class="green">70</text></g><g class="f3"><text x="400" y="415" font-size="18" text-anchor="middle" class="grey">flat, then steep, then flat again at the top</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 26 -->
+    <g class="scene" id="s26">
+      <text x="40" y="48" class="eyebrow">PART 5 — WHY YOUR BRAIN SAYS NO</text>
+      <g class="f1"><text x="400" y="130" font-size="18" text-anchor="middle" class="grey">365 days</text><rect x="60" y="150" width="680" height="72" fill="url(#calgrid)"/></g><g class="f2"><circle cx="110" cy="300" r="7" fill="#464845"/><circle cx="136" cy="300" r="7" fill="#464845"/><circle cx="162" cy="300" r="7" fill="#464845"/><circle cx="188" cy="300" r="7" fill="#464845"/><circle cx="214" cy="300" r="7" fill="#464845"/><circle cx="240" cy="300" r="7" fill="#464845"/><circle cx="266" cy="300" r="7" fill="#464845"/><circle cx="292" cy="300" r="7" fill="#464845"/><circle cx="318" cy="300" r="7" fill="#464845"/><circle cx="344" cy="300" r="7" fill="#464845"/><circle cx="370" cy="300" r="7" fill="#464845"/><circle cx="396" cy="300" r="7" fill="#464845"/><circle cx="422" cy="300" r="7" fill="#464845"/><circle cx="448" cy="300" r="7" fill="#464845"/><circle cx="474" cy="300" r="7" fill="#464845"/><circle cx="500" cy="300" r="7" fill="#464845"/><circle cx="526" cy="300" r="7" fill="#464845"/><circle cx="552" cy="300" r="7" fill="#464845"/><circle cx="578" cy="300" r="7" fill="#464845"/><circle cx="604" cy="300" r="7" fill="#464845"/><circle cx="630" cy="300" r="7" fill="#464845"/><circle cx="656" cy="300" r="7" fill="#464845"/><circle cx="682" cy="300" r="7" fill="#464845"/><text x="400" y="340" font-size="18" text-anchor="middle" class="grey">23 people</text></g><g class="f3"><text x="400" y="390" font-size="18" text-anchor="middle" class="grey">most days stay empty — the pairs do the work</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 27 -->
+    <g class="scene" id="s27">
+      <text x="40" y="48" class="eyebrow">PART 5 — WHY YOUR BRAIN SAYS NO</text>
+      <g class="f1"><rect x="180" y="260" width="110" height="120" fill="#464845"/><rect x="360" y="210" width="110" height="170" fill="#464845"/><rect x="540" y="120" width="110" height="260" fill="#6FCF97"/></g><g class="f2"><text x="235" y="247" font-size="16" text-anchor="middle" class="grey">253</text><text x="415" y="197" font-size="16" text-anchor="middle" class="grey">435</text><text x="595" y="107" font-size="16" text-anchor="middle" class="green">2,415</text></g><g class="f3"><text x="400" y="425" font-size="18" text-anchor="middle" class="grey">pairs grow faster than people</text></g><text x="235" y="400" font-size="13" text-anchor="middle" class="grey">23 people</text><text x="415" y="400" font-size="13" text-anchor="middle" class="grey">30 people</text><text x="595" y="400" font-size="13" text-anchor="middle" class="grey">70 people</text>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 28 -->
+    <g class="scene" id="s28">
+      <text x="40" y="48" class="eyebrow">PART 5 — WHY YOUR BRAIN SAYS NO</text>
+      <g class="f1"><circle cx="130" cy="140" r="7" fill="#464845"/><circle cx="164" cy="140" r="7" fill="#464845"/><circle cx="198" cy="140" r="7" fill="#464845"/><circle cx="232" cy="140" r="7" fill="#464845"/><circle cx="266" cy="140" r="7" fill="#464845"/><circle cx="130" cy="174" r="7" fill="#464845"/><circle cx="164" cy="174" r="7" fill="#464845"/><circle cx="198" cy="174" r="7" fill="#464845"/><circle cx="232" cy="174" r="7" fill="#464845"/><circle cx="266" cy="174" r="7" fill="#464845"/><circle cx="130" cy="208" r="7" fill="#464845"/><circle cx="164" cy="208" r="7" fill="#464845"/><circle cx="198" cy="208" r="7" fill="#464845"/><circle cx="232" cy="208" r="7" fill="#464845"/><circle cx="266" cy="208" r="7" fill="#464845"/><circle cx="130" cy="242" r="7" fill="#464845"/><circle cx="164" cy="242" r="7" fill="#464845"/><circle cx="198" cy="242" r="7" fill="#464845"/><circle cx="232" cy="242" r="7" fill="#464845"/><circle cx="266" cy="242" r="7" fill="#464845"/><circle cx="130" cy="276" r="7" fill="#464845"/><circle cx="164" cy="276" r="7" fill="#464845"/><circle cx="198" cy="276" r="7" fill="#464845"/><text x="215" y="320" font-size="16" text-anchor="middle" class="grey">23 people</text></g><g class="f2"><line x1="600.0" y1="150.0" x2="649.5" y2="170.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="150.0" x2="670.0" y2="220.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="150.0" x2="649.5" y2="269.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="150.0" x2="600.0" y2="290.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="150.0" x2="550.5" y2="269.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="150.0" x2="530.0" y2="220.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="150.0" x2="550.5" y2="170.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="170.5" x2="670.0" y2="220.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="170.5" x2="649.5" y2="269.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="170.5" x2="600.0" y2="290.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="170.5" x2="550.5" y2="269.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="170.5" x2="530.0" y2="220.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="170.5" x2="550.5" y2="170.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="670.0" y1="220.0" x2="649.5" y2="269.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="670.0" y1="220.0" x2="600.0" y2="290.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="670.0" y1="220.0" x2="550.5" y2="269.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="670.0" y1="220.0" x2="530.0" y2="220.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="670.0" y1="220.0" x2="550.5" y2="170.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="269.5" x2="600.0" y2="290.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="269.5" x2="550.5" y2="269.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="269.5" x2="530.0" y2="220.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="649.5" y1="269.5" x2="550.5" y2="170.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="290.0" x2="550.5" y2="269.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="290.0" x2="530.0" y2="220.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="290.0" x2="550.5" y2="170.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="550.5" y1="269.5" x2="530.0" y2="220.0" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="550.5" y1="269.5" x2="550.5" y2="170.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="530.0" y1="220.0" x2="550.5" y2="170.5" stroke="#464845" stroke-width="1" opacity=".6"/><line x1="600.0" y1="150.0" x2="649.5" y2="170.5" stroke="#6FCF97" stroke-width="2" opacity="1"/><circle cx="600.0" cy="150.0" r="6" fill="#6FCF97"/><circle cx="649.5" cy="170.5" r="6" fill="#6FCF97"/><circle cx="670.0" cy="220.0" r="6" fill="#fff"/><circle cx="649.5" cy="269.5" r="6" fill="#fff"/><circle cx="600.0" cy="290.0" r="6" fill="#fff"/><circle cx="550.5" cy="269.5" r="6" fill="#fff"/><circle cx="530.0" cy="220.0" r="6" fill="#fff"/><circle cx="550.5" cy="170.5" r="6" fill="#fff"/><text x="600" y="330" font-size="16" text-anchor="middle" class="green">253 handshakes</text></g><g class="f3"><text x="400" y="390" font-size="18" text-anchor="middle" class="grey">every handshake is a comparison</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 29 -->
+    <g class="scene" id="s29">
+      <text x="40" y="48" class="eyebrow">PART 5 — WHY YOUR BRAIN SAYS NO</text>
+      <g class="f1"><path d="M 120 380 H 240 V 330 H 360 V 280 H 480 V 230 H 600 V 180 H 680" class="thin draw" pathLength="100" fill="none"/></g><circle r="7" fill="#7E9BFF"><animateMotion dur="8s" repeatCount="indefinite" path="M 120 380 H 240 V 330 H 360 V 280 H 480 V 230 H 600 V 180 H 680"/></circle><g class="f2"><text x="180" y="365" font-size="14" text-anchor="middle" class="grey">10</text><text x="300" y="315" font-size="14" text-anchor="middle" class="grey">15</text><text x="420" y="265" font-size="14" text-anchor="middle" class="grey">20</text><text x="540" y="215" font-size="14" text-anchor="middle" class="grey">22</text><text x="640" y="165" font-size="14" text-anchor="middle" class="green">23</text></g><g class="f3"><text x="400" y="415" font-size="18" text-anchor="middle" class="grey">each step is bigger than the last</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 30 -->
+    <g class="scene" id="s30">
+      <text x="40" y="48" class="eyebrow">PART 5 — WHY YOUR BRAIN SAYS NO</text>
+      <g class="f1"><rect x="90" y="172" width="40" height="168" fill="#464845"/><rect x="148" y="196" width="40" height="144" fill="#464845"/><rect x="206" y="160" width="40" height="180" fill="#464845"/><rect x="264" y="166" width="40" height="174" fill="#464845"/><rect x="322" y="154" width="40" height="186" fill="#464845"/><rect x="380" y="160" width="40" height="180" fill="#464845"/><rect x="438" y="148" width="40" height="192" fill="#464845"/><rect x="496" y="142" width="40" height="198" fill="#464845"/><rect x="554" y="112" width="40" height="228" fill="#6FCF97"/><rect x="612" y="154" width="40" height="186" fill="#464845"/><rect x="670" y="166" width="40" height="174" fill="#464845"/><rect x="728" y="160" width="40" height="180" fill="#464845"/></g><g class="f2"><text x="400" y="100" font-size="18" text-anchor="middle" class="green">September — the busiest month</text></g><g class="f3"><text x="400" y="410" font-size="18" text-anchor="middle" class="grey">real birthdays bunch up — but twenty-three stays twenty-three</text></g><text x="110" y="360" font-size="12" text-anchor="middle" class="grey">J</text><text x="168" y="360" font-size="12" text-anchor="middle" class="grey">F</text><text x="226" y="360" font-size="12" text-anchor="middle" class="grey">M</text><text x="284" y="360" font-size="12" text-anchor="middle" class="grey">A</text><text x="342" y="360" font-size="12" text-anchor="middle" class="grey">M</text><text x="400" y="360" font-size="12" text-anchor="middle" class="grey">J</text><text x="458" y="360" font-size="12" text-anchor="middle" class="grey">J</text><text x="516" y="360" font-size="12" text-anchor="middle" class="grey">A</text><text x="574" y="360" font-size="12" text-anchor="middle" class="green">S</text><text x="632" y="360" font-size="12" text-anchor="middle" class="grey">O</text><text x="690" y="360" font-size="12" text-anchor="middle" class="grey">N</text><text x="748" y="360" font-size="12" text-anchor="middle" class="grey">D</text>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 31 -->
+    <g class="scene" id="s31">
+      <text x="40" y="48" class="eyebrow">PART 6 — TRY IT YOURSELF</text>
+      <g class="f1"><circle cx="280" cy="120" r="7" fill="#464845"/><circle cx="314" cy="120" r="7" fill="#464845"/><circle cx="348" cy="120" r="7" fill="#464845"/><circle cx="382" cy="120" r="7" fill="#464845"/><circle cx="416" cy="120" r="7" fill="#464845"/><circle cx="450" cy="120" r="7" fill="#464845"/><circle cx="280" cy="154" r="7" fill="#464845"/><circle cx="314" cy="154" r="7" fill="#6FCF97"/><circle cx="348" cy="154" r="7" fill="#6FCF97"/><circle cx="382" cy="154" r="7" fill="#464845"/><circle cx="416" cy="154" r="7" fill="#464845"/><circle cx="450" cy="154" r="7" fill="#464845"/><circle cx="280" cy="188" r="7" fill="#464845"/><circle cx="314" cy="188" r="7" fill="#464845"/><circle cx="348" cy="188" r="7" fill="#464845"/><circle cx="382" cy="188" r="7" fill="#464845"/><circle cx="416" cy="188" r="7" fill="#464845"/><circle cx="450" cy="188" r="7" fill="#464845"/><circle cx="280" cy="222" r="7" fill="#464845"/><circle cx="314" cy="222" r="7" fill="#464845"/><circle cx="348" cy="222" r="7" fill="#464845"/><circle cx="382" cy="222" r="7" fill="#464845"/><circle cx="416" cy="222" r="7" fill="#464845"/><circle cx="450" cy="222" r="7" fill="#464845"/><circle cx="280" cy="256" r="7" fill="#464845"/><circle cx="314" cy="256" r="7" fill="#464845"/><circle cx="348" cy="256" r="7" fill="#464845"/><circle cx="382" cy="256" r="7" fill="#464845"/><circle cx="416" cy="256" r="7" fill="#464845"/><circle cx="450" cy="256" r="7" fill="#464845"/></g><g class="f2"><text x="400" y="330" font-size="26" text-anchor="middle" class="math">a class of 30 — <tspan fill="#6FCF97">70.6%</tspan></text></g><g class="f3"><text x="400" y="370" font-size="18" text-anchor="middle" class="grey">try it on your own class — count the pairs</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 32 -->
+    <g class="scene" id="s32">
+      <text x="40" y="48" class="eyebrow">PART 6 — TRY IT YOURSELF</text>
+      <g class="f1"><circle cx="90" cy="150" r="5" fill="#464845"/><circle cx="112" cy="150" r="5" fill="#464845"/><circle cx="134" cy="150" r="5" fill="#464845"/><circle cx="156" cy="150" r="5" fill="#464845"/><circle cx="178" cy="150" r="5" fill="#464845"/><circle cx="90" cy="172" r="5" fill="#464845"/><circle cx="112" cy="172" r="5" fill="#6FCF97"/><circle cx="134" cy="172" r="5" fill="#6FCF97"/><circle cx="156" cy="172" r="5" fill="#464845"/><circle cx="178" cy="172" r="5" fill="#464845"/><circle cx="90" cy="194" r="5" fill="#464845"/><circle cx="112" cy="194" r="5" fill="#464845"/><circle cx="134" cy="194" r="5" fill="#464845"/><circle cx="156" cy="194" r="5" fill="#464845"/><circle cx="178" cy="194" r="5" fill="#464845"/><circle cx="90" cy="216" r="5" fill="#464845"/><circle cx="112" cy="216" r="5" fill="#464845"/><circle cx="134" cy="216" r="5" fill="#464845"/><circle cx="156" cy="216" r="5" fill="#464845"/><circle cx="178" cy="216" r="5" fill="#464845"/><circle cx="90" cy="238" r="5" fill="#464845"/><circle cx="112" cy="238" r="5" fill="#464845"/><circle cx="134" cy="238" r="5" fill="#464845"/><circle cx="310" cy="150" r="5" fill="#464845"/><circle cx="332" cy="150" r="5" fill="#464845"/><circle cx="354" cy="150" r="5" fill="#464845"/><circle cx="376" cy="150" r="5" fill="#464845"/><circle cx="398" cy="150" r="5" fill="#464845"/><circle cx="310" cy="172" r="5" fill="#464845"/><circle cx="332" cy="172" r="5" fill="#464845"/><circle cx="354" cy="172" r="5" fill="#464845"/><circle cx="376" cy="172" r="5" fill="#464845"/><circle cx="398" cy="172" r="5" fill="#464845"/><circle cx="310" cy="194" r="5" fill="#464845"/><circle cx="332" cy="194" r="5" fill="#6FCF97"/><circle cx="354" cy="194" r="5" fill="#6FCF97"/><circle cx="376" cy="194" r="5" fill="#464845"/><circle cx="398" cy="194" r="5" fill="#464845"/><circle cx="310" cy="216" r="5" fill="#464845"/><circle cx="332" cy="216" r="5" fill="#464845"/><circle cx="354" cy="216" r="5" fill="#464845"/><circle cx="376" cy="216" r="5" fill="#464845"/><circle cx="398" cy="216" r="5" fill="#464845"/><circle cx="310" cy="238" r="5" fill="#464845"/><circle cx="332" cy="238" r="5" fill="#464845"/><circle cx="354" cy="238" r="5" fill="#464845"/><circle cx="530" cy="150" r="5" fill="#464845"/><circle cx="552" cy="150" r="5" fill="#464845"/><circle cx="574" cy="150" r="5" fill="#464845"/><circle cx="596" cy="150" r="5" fill="#6FCF97"/><circle cx="618" cy="150" r="5" fill="#6FCF97"/><circle cx="530" cy="172" r="5" fill="#464845"/><circle cx="552" cy="172" r="5" fill="#464845"/><circle cx="574" cy="172" r="5" fill="#464845"/><circle cx="596" cy="172" r="5" fill="#464845"/><circle cx="618" cy="172" r="5" fill="#464845"/><circle cx="530" cy="194" r="5" fill="#464845"/><circle cx="552" cy="194" r="5" fill="#464845"/><circle cx="574" cy="194" r="5" fill="#464845"/><circle cx="596" cy="194" r="5" fill="#464845"/><circle cx="618" cy="194" r="5" fill="#464845"/><circle cx="530" cy="216" r="5" fill="#464845"/><circle cx="552" cy="216" r="5" fill="#464845"/><circle cx="574" cy="216" r="5" fill="#464845"/><circle cx="596" cy="216" r="5" fill="#464845"/><circle cx="618" cy="216" r="5" fill="#464845"/><circle cx="530" cy="238" r="5" fill="#464845"/><circle cx="552" cy="238" r="5" fill="#464845"/><circle cx="574" cy="238" r="5" fill="#464845"/></g><g class="f2"><text x="155" y="300" font-size="15" text-anchor="middle" class="grey">group A</text><text x="375" y="300" font-size="15" text-anchor="middle" class="grey">group B</text><text x="595" y="300" font-size="15" text-anchor="middle" class="grey">group C</text></g><g class="f3"><text x="400" y="350" font-size="20" text-anchor="middle" class="math">three groups of 23 — one of them almost certainly has a match</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 33 -->
+    <g class="scene" id="s33">
+      <text x="40" y="48" class="eyebrow">PART 6 — TRY IT YOURSELF</text>
+      <g class="f1"><text x="400" y="120" font-size="18" text-anchor="middle" class="grey">365 days — 365 slots</text><rect x="80" y="140" width="640" height="60" fill="url(#calgrid)"/></g><g class="f2"><circle cx="400" cy="260" r="11" fill="#6FCF97" class="bob"/><line x1="400" y1="275" x2="400" y2="300" stroke="#6FCF97" stroke-width="2"/><polygon points="400,312 392,300 408,300" fill="#6FCF97"/><text x="400" y="350" font-size="20" text-anchor="middle" class="grey">person 366 — no day left</text></g><g class="f3 arrive"><text x="400" y="405" font-size="36" text-anchor="middle" class="math green">guaranteed — 100%</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 34 -->
+    <g class="scene" id="s34">
+      <text x="40" y="48" class="eyebrow">PART 6 — TRY IT YOURSELF</text>
+      <g class="f1"><circle cx="120" cy="150" r="8" fill="#464845"/><circle cx="200" cy="150" r="8" fill="#464845"/><circle cx="280" cy="150" r="8" fill="#464845"/><circle cx="360" cy="150" r="8" fill="#464845"/><circle cx="440" cy="150" r="8" fill="#464845"/><circle cx="520" cy="150" r="8" fill="#464845"/><circle cx="600" cy="150" r="8" fill="#464845"/><circle cx="680" cy="150" r="8" fill="#464845"/><circle cx="160" cy="210" r="6" fill="#464845"/><circle cx="220" cy="210" r="6" fill="#464845"/><circle cx="280" cy="210" r="6" fill="#464845"/><circle cx="340" cy="210" r="6" fill="#464845"/><circle cx="400" cy="210" r="6" fill="#464845"/><circle cx="460" cy="210" r="6" fill="#464845"/><circle cx="520" cy="210" r="6" fill="#464845"/><circle cx="580" cy="210" r="6" fill="#464845"/><circle cx="200" cy="270" r="4.5" fill="#464845"/><circle cx="245" cy="270" r="4.5" fill="#464845"/><circle cx="290" cy="270" r="4.5" fill="#464845"/><circle cx="335" cy="270" r="4.5" fill="#464845"/><circle cx="380" cy="270" r="4.5" fill="#464845"/><circle cx="425" cy="270" r="4.5" fill="#464845"/><circle cx="470" cy="270" r="4.5" fill="#464845"/><circle cx="515" cy="270" r="4.5" fill="#464845"/><circle cx="230" cy="320" r="3.5" fill="#464845"/><circle cx="264" cy="320" r="3.5" fill="#464845"/><circle cx="298" cy="320" r="3.5" fill="#464845"/><circle cx="332" cy="320" r="3.5" fill="#464845"/><circle cx="366" cy="320" r="3.5" fill="#464845"/><circle cx="400" cy="320" r="3.5" fill="#464845"/><circle cx="434" cy="320" r="3.5" fill="#464845"/><circle cx="468" cy="320" r="3.5" fill="#464845"/></g><g class="f2"><text x="400" y="380" font-size="30" text-anchor="middle" class="math">count pairs, not people</text></g><g class="f3"><text x="400" y="415" font-size="18" text-anchor="middle" class="grey">the crowd looks big — the pairs are bigger</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 35 -->
+    <g class="scene" id="s35">
+      <text x="40" y="48" class="eyebrow">PART 6 — TRY IT YOURSELF</text>
+      <g class="f1"><line x1="123" y1="110" x2="137" y2="110" stroke="#464845" stroke-width="1.5"/><circle cx="123" cy="110" r="4" fill="#464845"/><circle cx="137" cy="110" r="4" fill="#464845"/><line x1="193" y1="110" x2="207" y2="110" stroke="#464845" stroke-width="1.5"/><circle cx="193" cy="110" r="4" fill="#464845"/><circle cx="207" cy="110" r="4" fill="#464845"/><line x1="263" y1="110" x2="277" y2="110" stroke="#464845" stroke-width="1.5"/><circle cx="263" cy="110" r="4" fill="#464845"/><circle cx="277" cy="110" r="4" fill="#464845"/><line x1="333" y1="110" x2="347" y2="110" stroke="#464845" stroke-width="1.5"/><circle cx="333" cy="110" r="4" fill="#464845"/><circle cx="347" cy="110" r="4" fill="#464845"/><line x1="403" y1="110" x2="417" y2="110" stroke="#464845" stroke-width="1.5"/><circle cx="403" cy="110" r="4" fill="#464845"/><circle cx="417" cy="110" r="4" fill="#464845"/><line x1="473" y1="110" x2="487" y2="110" stroke="#464845" stroke-width="1.5"/><circle cx="473" cy="110" r="4" fill="#464845"/><circle cx="487" cy="110" r="4" fill="#464845"/><line x1="543" y1="110" x2="557" y2="110" stroke="#464845" stroke-width="1.5"/><circle cx="543" cy="110" r="4" fill="#464845"/><circle cx="557" cy="110" r="4" fill="#464845"/><line x1="613" y1="110" x2="627" y2="110" stroke="#464845" stroke-width="1.5"/><circle cx="613" cy="110" r="4" fill="#464845"/><circle cx="627" cy="110" r="4" fill="#464845"/><rect x="170" y="220" width="70" height="60" rx="8" fill="#212120" stroke="#fff" stroke-width="2"/><path d="M 185 220 V 200 A 20 20 0 0 1 225 220" fill="none" stroke="#fff" stroke-width="2"/><text x="205" y="320" font-size="16" text-anchor="middle" class="grey">security</text></g><g class="f2"><rect x="365" y="220" width="70" height="60" rx="8" fill="#212120" stroke="#fff" stroke-width="2"/><circle cx="365" cy="250" r="6" fill="#000"/><circle cx="435" cy="250" r="6" fill="#000"/><text x="400" y="320" font-size="16" text-anchor="middle" class="grey">lotteries</text></g><g class="f3"><path d="M 540 200 C 570 220, 570 240, 540 260 M 610 200 C 580 220, 580 240, 610 260" fill="none" stroke="#fff" stroke-width="2"/><line x1="552" y1="215" x2="598" y2="215" stroke="#9A9A9A" stroke-width="1.5"/><line x1="548" y1="230" x2="602" y2="230" stroke="#9A9A9A" stroke-width="1.5"/><line x1="552" y1="245" x2="598" y2="245" stroke="#9A9A9A" stroke-width="1.5"/><text x="575" y="320" font-size="16" text-anchor="middle" class="grey">DNA tests</text></g><line x1="180" y1="348" x2="620" y2="348" stroke="#464845" stroke-width="1.5"/><line x1="205" y1="344" x2="205" y2="352" stroke="#464845" stroke-width="1.5"/><line x1="400" y1="344" x2="400" y2="352" stroke="#464845" stroke-width="1.5"/><line x1="575" y1="344" x2="575" y2="352" stroke="#464845" stroke-width="1.5"/><text x="400" y="370" font-size="18" text-anchor="middle" class="grey">the same maths, everywhere</text>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 36 -->
+    <g class="scene" id="s36">
+      <text x="40" y="48" class="eyebrow">RECAP</text>
+      <g class="f1"><text x="400" y="115" font-size="32" text-anchor="middle" class="math">11 + 11 + 1 = 23</text><text x="110" y="185" font-size="14" text-anchor="middle" class="grey">11</text><circle cx="150" cy="180" r="8" fill="#fff"/><circle cx="200" cy="180" r="8" fill="#fff"/><circle cx="250" cy="180" r="8" fill="#fff"/><circle cx="300" cy="180" r="8" fill="#fff"/><circle cx="350" cy="180" r="8" fill="#fff"/><circle cx="400" cy="180" r="8" fill="#fff"/><circle cx="450" cy="180" r="8" fill="#fff"/><circle cx="500" cy="180" r="8" fill="#fff"/><circle cx="550" cy="180" r="8" fill="#fff"/><circle cx="600" cy="180" r="8" fill="#fff"/><circle cx="650" cy="180" r="8" fill="#fff"/></g><g class="f2"><text x="110" y="285" font-size="14" text-anchor="middle" class="grey">11</text><circle cx="150" cy="280" r="8" fill="#464845"/><circle cx="200" cy="280" r="8" fill="#464845"/><circle cx="250" cy="280" r="8" fill="#464845"/><circle cx="300" cy="280" r="8" fill="#464845"/><circle cx="350" cy="280" r="8" fill="#464845"/><circle cx="400" cy="280" r="8" fill="#464845"/><circle cx="450" cy="280" r="8" fill="#464845"/><circle cx="500" cy="280" r="8" fill="#464845"/><circle cx="550" cy="280" r="8" fill="#464845"/><circle cx="600" cy="280" r="8" fill="#464845"/><circle cx="650" cy="280" r="8" fill="#464845"/></g><g class="f3"><circle cx="400" cy="340" r="8" fill="#6FCF97"/><text x="425" y="345" font-size="14" class="green">referee</text><text x="400" y="380" font-size="18" text-anchor="middle" class="grey">eleven against eleven — plus the referee: twenty-three people, 253 pairs</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 37 -->
+    <g class="scene" id="s37">
+      <text x="40" y="48" class="eyebrow">RECAP</text>
+      <rect x="180" y="130" width="440" height="55" rx="8" fill="#212120"/><rect x="180" y="200" width="440" height="55" rx="8" fill="#212120"/><rect x="180" y="278" width="440" height="60" rx="8" fill="#6FCF97"/><g class="f1"><text x="400" y="170" font-size="32" text-anchor="middle" class="math">23 people → <tspan fill="#6FCF97">50.7%</tspan></text></g><g class="f2"><text x="400" y="240" font-size="32" text-anchor="middle" class="math">70 people → <tspan fill="#6FCF97">99.9%</tspan></text></g><g class="f3"><text x="400" y="320" font-size="36" text-anchor="middle" class="math ink pulse">366 people → 100%</text></g>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+    <!-- 38 -->
+    <g class="scene" id="s38">
+      <text x="40" y="48" class="eyebrow">RECAP</text>
+      <g class="f1"><text x="400" y="200" font-size="56" text-anchor="middle" class="math">twenty-three people.</text></g><g class="f2 arrive"><text x="400" y="270" font-size="56" text-anchor="middle" class="math"><tspan fill="#6FCF97">253</tspan> chances.</text></g><g class="f3"><text x="400" y="330" font-size="22" text-anchor="middle" class="grey">one shared birthday</text></g><circle cx="90" cy="392" r="4" fill="#464845"/><circle cx="118" cy="392" r="4" fill="#464845"/><circle cx="146" cy="392" r="4" fill="#464845"/><circle cx="174" cy="392" r="4" fill="#464845"/><circle cx="202" cy="392" r="4" fill="#464845"/><circle cx="230" cy="392" r="4" fill="#6FCF97"/><circle cx="258" cy="392" r="4" fill="#6FCF97"/><circle cx="286" cy="392" r="4" fill="#464845"/><circle cx="314" cy="392" r="4" fill="#464845"/><circle cx="342" cy="392" r="4" fill="#464845"/><circle cx="370" cy="392" r="4" fill="#464845"/><circle cx="398" cy="392" r="4" fill="#464845"/><circle cx="426" cy="392" r="4" fill="#464845"/><circle cx="454" cy="392" r="4" fill="#464845"/><circle cx="482" cy="392" r="4" fill="#464845"/><circle cx="510" cy="392" r="4" fill="#464845"/><circle cx="538" cy="392" r="4" fill="#464845"/><circle cx="566" cy="392" r="4" fill="#464845"/><circle cx="594" cy="392" r="4" fill="#464845"/><circle cx="622" cy="392" r="4" fill="#464845"/><circle cx="650" cy="392" r="4" fill="#464845"/><circle cx="678" cy="392" r="4" fill="#464845"/><circle cx="706" cy="392" r="4" fill="#464845"/>
+      <text x="770" y="430" text-anchor="end" class="mark">birthday — 04</text>
+    </g>
+  </svg>
+  </div>
+
+  <audio id="vo" src="rag-video-04-audio/rag-video-04-full-audio.mp3" preload="auto"></audio>
+  <div class="caption" id="caption"></div>
+  <div class="controls">
+    <button id="playBtn">Play</button>
+    <button id="restartBtn">Replay</button>
+    <div class="progress" id="progress"><i id="bar"></i></div>
+    <div class="time" id="time">0:00 / 10:28</div>
+  </div>
+  <p class="note"><b>Video 04 — Why 23 People Is Enough — The Birthday Paradox.</b> v1.1 (visuals only): one idea — your brain counts people, the maths counts pairs. 23 people make 253 pairs, so a shared birthday is more likely than not (50.7%). Voice: Muse TTS avocado_v2:vd2_quivering_oak, English, speed 80 (voice B), 1.0x — no speedup. Numbers verified by direct computation and cross-checked against Wikipedia's "Birthday problem": P(23) = 50.7%, P(30) = 70.6%, P(50) = 97.0%, P(70) = 99.9%, 366 people = 100% by the pigeonhole principle; matching YOUR birthday needs 253 other people. Sources in the publish pack.</p>
+</div>
+<script>
+const scenes=[
+ {t0:0.8,  dur:12.744, cap:"<b>Twenty-three people.</b> In any room, the odds are better than even that two share a birthday."},
+ {t0:14.744,  dur:13.344, cap:"Most people guess <b>around 180.</b> The real answer is 23."},
+ {t0:29.288,  dur:18.072, cap:"A classroom, a party, a football team \u2014 <b>twenty-three people is enough.</b>"},
+ {t0:48.56,  dur:12.888, cap:"Your brain asks the <b>wrong question:</b> will someone share MY birthday?"},
+ {t0:62.648,  dur:16.224, cap:"To match YOUR birthday you would need <b>253 other people</b> in the room."},
+ {t0:80.072,  dur:20.376, cap:"There is only one of you. Every new person gets <b>one chance in 365.</b>"},
+ {t0:101.648,  dur:9.744, cap:"The real question is different: does <b>ANY two</b> people share a birthday?"},
+ {t0:112.592,  dur:12.384, cap:"Every pair is a chance. With 23 people, how many pairs is that? <b>23 + 22 + \u2026 + 1.</b>"},
+ {t0:126.176,  dur:13.872, cap:"23 \u00d7 22 \u00f7 2 = <b>253 pairs.</b> Two hundred and fifty-three chances."},
+ {t0:141.248,  dur:11.88, cap:"Each pair is small \u2014 <b>1 in 365.</b> But there are 253 of them."},
+ {t0:154.328,  dur:17.328, cap:"253 is also how many OTHER people you would need <b>to match your birthday.</b> Same number, two questions."},
+ {t0:172.856,  dur:15.888, cap:"Two kinds of comparison: <b>23 against one</b>, or 253 against 253."},
+ {t0:189.944,  dur:13.992, cap:"The trick: count the opposite. What is the chance <b>nobody</b> shares?"},
+ {t0:205.136,  dur:17.136, cap:"Person one: any day is free. <b>365 out of 365.</b>"},
+ {t0:223.472,  dur:11.736, cap:"Person two: <b>364 out of 365</b> \u2014 any day except the first person's."},
+ {t0:236.408,  dur:19.872, cap:"Multiply them all: <b>365 \u00d7 364 \u00d7 \u2026 \u00d7 343</b>, over 365 to the power 23."},
+ {t0:257.48,  dur:11.784, cap:"The chance nobody shares: <b>49.3%</b> \u2014 less than half."},
+ {t0:270.464,  dur:13.776, cap:"So flip it. 100 minus 49.3 is <b>50.7%</b>. More likely than not."},
+ {t0:285.44,  dur:13.584, cap:"The curve starts slow: 10 people, <b>11.7%</b>. 15 people, 25.3%."},
+ {t0:300.224,  dur:16.536, cap:"Then it tips: 20 people, <b>41.1%</b> \u2014 22 people, 47.6%."},
+ {t0:317.96,  dur:13.872, cap:"At 23, it crosses the line: <b>50.7%.</b>"},
+ {t0:333.032,  dur:21.84, cap:"Every new person adds <b>more pairs than the last.</b> The growth accelerates."},
+ {t0:356.072,  dur:15.48, cap:"At 30, it is <b>70.6%</b>. At 40, 89.1%. At 50, 97%."},
+ {t0:372.752,  dur:10.872, cap:"At 70 people, <b>99.9%</b> \u2014 as certain as anything gets."},
+ {t0:384.824,  dur:14.688, cap:"The curve is an S: flat, then steep, then <b>flat again at the top.</b>"},
+ {t0:400.712,  dur:14.688, cap:"365 days, only 23 people \u2014 <b>most days stay empty.</b> The pairs do the work."},
+ {t0:416.6,  dur:17.928, cap:"Why 23 and not 50? Because 23 people make <b>253 pairs</b> \u2014 and 30 make 435."},
+ {t0:435.728,  dur:12.936, cap:"Every handshake is a comparison. <b>253 handshakes</b> in a room of 23."},
+ {t0:449.864,  dur:11.328, cap:"The odds rise like a wave, not a staircase. <b>Each step is bigger.</b>"},
+ {t0:462.392,  dur:16.488, cap:"Birthdays are not spread evenly \u2014 but <b>it barely matters.</b>"},
+ {t0:480.08,  dur:13.176, cap:"Try it: in a class of 30, the chance is <b>70.6%</b>."},
+ {t0:494.456,  dur:19.728, cap:"Three groups of 23 \u2014 <b>one of them almost certainly</b> has a match."},
+ {t0:515.384,  dur:28.176, cap:"With 366 people, a match is <b>guaranteed</b> \u2014 there are only 365 days."},
+ {t0:544.76,  dur:15.672, cap:"Your intuition counts people. <b>The maths counts pairs.</b>"},
+ {t0:561.632,  dur:18.672, cap:"The same maths runs <b>security, lotteries and DNA tests.</b>"},
+ {t0:581.504,  dur:10.392, cap:"A football team is enough. <b>Pairs grow faster than people.</b>"},
+ {t0:593.096,  dur:18.624, cap:"23 people, <b>50.7%</b>. 70 people, 99.9%. 366 people, 100%."},
+ {t0:612.92,  dur:14.688, cap:"Twenty-three people. <b>Two hundred and fifty-three chances.</b> One shared birthday."},
+];
+const TOTAL=627.608;
+let elapsed=0, playing=false, timer=null, currentIdx=-1;
+const capEl=document.getElementById('caption'), bar=document.getElementById('bar'), timeEl=document.getElementById('time'), playBtn=document.getElementById('playBtn');
+function fmt(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')}
+let countRAF=null;
+function countUp(){
+  const el=document.getElementById('count253'); if(!el) return;
+  cancelAnimationFrame(countRAF);
+  const t0=performance.now();
+  const step=(now)=>{ const p=Math.min(1,(now-t0-600)/3000); const e=1-Math.pow(1-Math.max(0,p),3); el.textContent=Math.round(253*e); if(p<1) countRAF=requestAnimationFrame(step); };
+  countRAF=requestAnimationFrame(step);
+}
+function showScene(i){
+  if(i===currentIdx) return;
+  currentIdx=i;
+  scenes.forEach((s,j)=>{
+    document.getElementById('s'+(j+1)).classList.toggle('active', j===i);
+  });
+  capEl.style.opacity=0;
+  setTimeout(()=>{ capEl.innerHTML=scenes[i].cap; capEl.style.opacity=1; },180);
+  if(i===8) countUp();
+}
+const audioEl=document.getElementById('vo');
+let startPerf=null; // wall-clock origin for the scene timer (performance.now)
+function tick(){
+  // WALL CLOCK is the single source of truth: elapsed is recomputed from
+  // performance.now() every tick, so late setInterval firings never
+  // accumulate. The <audio> clock is NOT usable here — under recording load
+  // headless Chromium's audio currentTime runs ~2% slow (measured 2026-11-26:
+  // audio advanced only ~58.7s per 60s of wall time), which made the picture
+  // lag the voice by ~13s at the end of the v2.1 first export (final scene
+  // never appeared). The audio element is only played for the preview; the
+  // recorded video is muxed with the mix afterwards, so scenes must follow
+  // wall time, not the audio element.
+  if(startPerf===null) startPerf=performance.now()-elapsed*1000;
+  elapsed=(performance.now()-startPerf)/1000;
+  if(elapsed>=TOTAL){ pause(); elapsed=TOTAL; }
+  const idx=scenes.findIndex((s,i)=> elapsed>=s.t0 && elapsed < s.t0+s.dur);
+  if(idx>=0) showScene(idx); // gap between lines: KEEP the current scene, never jump to another
+  bar.style.width=(elapsed/TOTAL*100)+'%';
+  timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL);
+}
+function play(){ if(elapsed>=TOTAL){ elapsed=0; currentIdx=-1; } playing=true; playBtn.textContent='Pause'; startPerf=performance.now()-elapsed*1000; timer=setInterval(tick,100); const a=document.getElementById('vo'); if(a){ a.currentTime=elapsed; a.play().catch(()=>{}); } }
+function pause(){ playing=false; playBtn.textContent='Play'; clearInterval(timer); const a=document.getElementById('vo'); if(a) a.pause(); }
+function goTo(t){ elapsed=t; startPerf=performance.now()-t*1000; const a=document.getElementById('vo'); if(a){ a.currentTime=t; if(playing) a.play().catch(()=>{}); } const i=scenes.findIndex((s)=> t>=s.t0 && t < s.t0+s.dur); currentIdx=-1; showScene(i<0?0:i); bar.style.width=(elapsed/TOTAL*100)+'%'; timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL); }
+playBtn.onclick=()=> playing?pause():play();
+document.getElementById('restartBtn').onclick=()=>{ goTo(0); play(); };
+document.getElementById('progress').onclick=function(e){ const r=this.getBoundingClientRect(); goTo((e.clientX-r.left)/r.width*TOTAL); };
+showScene(0);
+</script>
+</body>
+</html>

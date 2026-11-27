@@ -1,0 +1,38 @@
+Twenty-three people. One room. And a better-than-even chance that two of them share a birthday. That sounds wrong. It is not.
+Here is the claim, exactly. Put twenty-three strangers in a room, and the chance that two of them were born on the same day is fifty point seven percent. Better than a coin flip.
+Your brain says no. Twenty-three people, three hundred and sixty-five days — how could a match be likely? Ask a room of twenty-three people, and most of them will say no. Ask a mathematician, and they will take your money.
+First, the question your brain is actually answering. It is not the question I asked. Your brain hears: what are the chances that someone here shares MY birthday?
+That is a different question — and a much harder one. For someone to match YOUR birthday, you would need about two hundred and fifty-three OTHER people in the room with you. More than ten times as many.
+Why? Because there is only one of you. Every new person gets one chance to match your day — one out of three hundred and sixty-five. It adds up slowly. Two hundred and fifty-three other people, all hoping to match one single day.
+But the real question is not about you at all. It is about ANY two people matching EACH OTHER. And that changes everything.
+So forget birthdays for a second, and count pairs. You, and the person next to you — that is one pair. You, and the person by the window — that is another.
+Every person can pair with every other person. With twenty-three people, that is twenty-three times twenty-two, divided by two. Two hundred and fifty-three pairs.
+Two hundred and fifty-three chances for a match — not twenty-three. Your brain counted the people. The maths counts the pairs.
+And here is a coincidence worth noticing. Two hundred and fifty-three is also the number of OTHER people you would need for someone to match YOUR birthday. Same number, two different questions.
+And each pair is a small chance. One pair matching is unlikely — one in three hundred and sixty-five. But you do not have one pair. You have two hundred and fifty-three.
+So how do we turn two hundred and fifty-three chances into one number? We ask the opposite question. What is the chance that NO pair matches at all?
+Take the first person. Any birthday is fine — three hundred and sixty-five out of three hundred and sixty-five. The second person must avoid that one day: three hundred and sixty-four out of three hundred and sixty-five.
+The third person must avoid two days now: three hundred and sixty-three out of three hundred and sixty-five. Each new person has one fewer safe day.
+Write it out and it looks like this: three sixty-four over three sixty-five, times three sixty-three over three sixty-five, times three sixty-two over three sixty-five — twenty-three fractions, each one a little smaller than the last.
+Multiply them all together — all twenty-three people — and the chance that nobody shares a birthday is forty-nine point three percent. Less than half.
+So flip it. If there is a forty-nine point three percent chance of NO match, then there is a fifty point seven percent chance of at least one match. That is the whole paradox.
+And it is not a trick of rounding. Add one more person — twenty-four — and the chance jumps to fifty-three point eight percent. The tipping point is exactly twenty-three.
+That crossing is the whole story. Below twenty-three, a match is the underdog. Above it, a match is the favourite. One chair filled, and the favourite changes sides.
+Watch what happens as the room fills up. Ten people: eleven point seven percent. Barely a chance. Fifteen people: twenty-five point three percent.
+Twenty people: forty-one point one percent. Twenty-two people: forty-seven point six percent. Almost there — and still under half. Twenty-three people: fifty point seven percent. The line crosses fifty. One person walked in, and the odds flipped.
+Thirty people: seventy point six percent. Forty people: eighty-nine point one percent. Fifty people: ninety-seven percent. The curve does not climb — it rockets.
+Seventy people: ninety-nine point nine percent. At that point, betting against a shared birthday is like betting against the sun coming up.
+Notice the shape: it starts flat, then bends, then flattens again near a hundred percent. The action is all in the middle — between fifteen and forty people.
+So why does it feel impossible? Because your brain counts the wrong thing. It counts twenty-three people, and twenty-three feels small next to three hundred and sixty-five.
+But pairs grow fast. Double the people, and the pairs roughly quadruple. Ten people make forty-five pairs. Twenty people make a hundred and ninety. Thirty people make four hundred and thirty-five.
+Think of it like handshakes. In a room of twenty-three, there are two hundred and fifty-three handshakes. You counted the hands. The maths counts the handshakes.
+That is the real shape of the problem — it is not a line, it is a curve that bends upward. Your intuition is linear. The pairs are not.
+And one more honest check. Birthdays are not perfectly even — more babies are born in some months than others. That only makes matches MORE likely, not less. The fifty point seven percent is the cautious number.
+So try it. A classroom of thirty: seventy point six percent. If your teacher bets there is a match, take the other side only if you like losing money.
+A football team with the subs — twenty-three players, exactly the magic number. A party of fifty: ninety-seven percent. At a wedding of a hundred people, it is ninety-nine point nine nine nine nine seven percent. Basically certain.
+And here is the ceiling. With three hundred and sixty-six people, a match is guaranteed — there are only three hundred and sixty-five days. That is not probability any more. That is the pigeonhole principle. Even leap years barely move it: with three hundred and sixty-six days, twenty-three people still give you fifty point six percent.
+The trick works anywhere people gather. A lecture hall, a wedding, a football stadium — the bigger the crowd, the more certain the match. At seventy people, you can bet your lunch money on it.
+This is not just a party trick. The same maths sits behind computer security — why two different files can end up with the same fingerprint, and why systems have to plan for collisions. Pairs grow faster than people, everywhere.
+So the paradox is not that birthdays are magic. It is that pairs grow faster than people — and your brain was never built to feel that.
+One more time, the whole thing in three numbers. Twenty-three people. Two hundred and fifty-three pairs. Fifty point seven percent. Not twenty-three chances — two hundred and fifty-three. Not your birthday — any two birthdays.
+That is the birthday paradox. And the next time your gut says impossible, count the pairs. The maths is usually ahead of your gut — by about two hundred and thirty chances.
