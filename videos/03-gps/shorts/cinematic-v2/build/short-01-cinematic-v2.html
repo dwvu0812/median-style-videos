@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPS Short 1 — Cinematic v2 (vertical-native, 1080x1920)</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#000;font-family:"DejaVu Sans",system-ui,sans-serif;color:#fff}
+  .wrap{display:flex;flex-direction:column;height:100vh}
+  .stage{flex:1;min-height:0;background:#000;overflow:hidden}
+  svg{width:100%;height:100%;display:block}
+  /* CINEMATIC v2 — vertical-native player. Same Median style sheet as the
+     long-form player (black #000, serif maths, periwinkle #7E9BFF, mint
+     #6FCF97), but the stage is one continuous 1080x1920 scene-space:
+     beats crossfade into each other (morph, don't cut) and every beat has
+     continuous motion for its WHOLE duration (build/travel/trace/count).
+     Beat 1 is STAGED at load (showBeat(0) at the bottom of the script):
+     its entrance runs while the page loads, so frame 1 of the export is
+     the full composition — never a black frame. (The first version left
+     no beat active at load and frame 0 came out pure black: the same
+     defect the audit found in the old Short.) Scene clock:
+     performance.now() wall time (see tick). */
+  .beat{display:block;opacity:0;filter:blur(3px);transition:opacity .45s ease;pointer-events:none}
+  .beat.active{opacity:1;filter:blur(0);pointer-events:auto}
+  .eyebrow{font-size:30px;letter-spacing:10px;fill:#9A9A9A;font-weight:600}
+  .math{font-family:"Times New Roman",Georgia,serif;fill:#fff}
+  .grey{fill:#9A9A9A}
+  .green{fill:#6FCF97}.blue{fill:#7E9BFF}
+  .thin{stroke:#fff;stroke-width:2;fill:none}
+  .thinG{stroke:#9A9A9A;stroke-width:2;fill:none}
+  .fillChar{fill:#1A1A1A}.fillMain{fill:#212120}.fillPanel{fill:#141414}
+  .cap{font-size:46px;fill:#fff;font-family:"DejaVu Sans",sans-serif;stroke:#000;stroke-width:6;paint-order:stroke}
+  /* Entrances: slow blur-in 1.8s ease-out. BUILD stagger f1..f6 at
+     0/2/4/6/8/10s — a new element every 2s through the whole beat. */
+  .beat.active .f1{animation:blurFade 1.8s cubic-bezier(.22,1,.36,1) both}
+  .beat.active .f2{animation:blurFade 1.8s 2s cubic-bezier(.22,1,.36,1) both}
+  .beat.active .f3{animation:blurFade 1.8s 4s cubic-bezier(.22,1,.36,1) both}
+  .beat.active .f4{animation:blurFade 1.8s 6s cubic-bezier(.22,1,.36,1) both}
+  .beat.active .f5{animation:blurFade 1.8s 8s cubic-bezier(.22,1,.36,1) both}
+  .beat.active .f6{animation:blurFade 1.8s 10s cubic-bezier(.22,1,.36,1) both}
+  @keyframes blurFade{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+  .beat.active .arrive{animation:arriveIn 1.8s cubic-bezier(.22,1,.36,1) both;transform-box:fill-box;transform-origin:center}
+  @keyframes arriveIn{from{opacity:0;transform:scale(1.06);filter:blur(6px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+  /* Slide-ins for the tug-of-war chips: 1.5s ease-out, already moving at t=0. */
+  @keyframes slideL{from{transform:translateX(-420px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes slideR{from{transform:translateX(420px);opacity:0}to{transform:translateX(0);opacity:1}}
+  .beat.active .sL{animation:slideL 1.5s cubic-bezier(.22,1,.36,1) both}
+  .beat.active .sR{animation:slideR 1.5s cubic-bezier(.22,1,.36,1) both}
+  /* Line drawing: draw 2.5s; drawSlow 5s (the million-line trace). */
+  .beat.active .draw{stroke-dasharray:100;stroke-dashoffset:100;animation:draw 2.5s .3s ease-in-out forwards}
+  .beat.active .drawSlow{stroke-dasharray:100;stroke-dashoffset:100;animation:draw 5s .3s ease-in-out forwards}
+  /* Trace line: LINEAR 4s, no delay — must stay in sync with the SMIL
+     trace dot (also 4s linear, started by the same activation). An
+     ease-in-out line falls behind a linear dot and the dot floats in
+     empty space. */
+  .beat.active .drawTrace{stroke-dasharray:100;stroke-dashoffset:100;animation:draw 4s linear forwards}
+  .beat.active .drawD1{stroke-dasharray:100;stroke-dashoffset:100;animation:draw 3s 1s ease-in-out forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  /* Fade-out (B4's "38 µs/day" leaves as "11" arrives). */
+  .beat.active .fadeOut{animation:fadeOut 1s ease-in forwards}
+  @keyframes fadeOut{to{opacity:0}}
+  /* Dot build-in (day dots): scale from .4, staggered by inline delay. */
+  .beat.active .dotIn{animation:dotIn .8s cubic-bezier(.22,1,.36,1) both;transform-box:fill-box;transform-origin:center}
+  @keyframes dotIn{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+  /* City pin drop. */
+  .beat.active .dropIn{animation:dropIn 1s cubic-bezier(.22,1,.36,1) both}
+  @keyframes dropIn{from{transform:translateY(-120px);opacity:0}to{transform:translateY(0);opacity:1}}
+  /* Clock hand: constant speed, linear (physics). Origin set inline. */
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .beat.active .tickhandFast{animation:spin 6s linear infinite}
+  /* Callout breathe: a slow 5% scale pulse so Beat 2 keeps moving after
+     the trace dot arrives (otherwise the last ~3s of the beat are a
+     frozen picture). Applied to a CHILD group — never combine two
+     `animation` shorthands on one element, the later one wins. */
+  .beat.active .breathe{animation:breathe 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  #b7loop{transition:opacity 1.5s ease}
+  #b7main{transition:opacity 1.5s ease}
+  #captionG{transition:opacity .18s ease}
+  .controls{display:flex;gap:12px;align-items:center;padding:10px 16px;background:#000}
+  button{background:none;border:1px solid #555;color:#fff;border-radius:999px;padding:8px 16px;cursor:pointer;font-size:14px}
+  button:hover{border-color:#fff}
+  .progress{flex:1;height:2px;background:#222;cursor:pointer}
+  .progress i{display:block;height:100%;background:#fff;width:0%}
+  .time{font-size:12px;color:#9A9A9A;min-width:90px;text-align:right}
+  .hint{font-size:12px;color:#9A9A9A;padding:0 16px 12px;line-height:1.6}
+  body.export .controls,body.export .hint{display:none!important}
+  body.export .stage{flex:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+  <svg viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+    <!-- ============ BEAT 1 — SUBTRACT (0.0–8.7s) ============
+         Frame 1: chips already sliding in from both sides, counter at 0
+         starting to count, marker travelling on the scale. Motion in
+         frame 1 is the point: nothing here is a static title card. -->
+    <g class="beat" id="b1">
+      <text x="540" y="310" text-anchor="middle" class="eyebrow f1">THE TUG OF WAR</text>
+      <g class="sL">
+        <rect x="120" y="390" width="330" height="175" rx="24" fill="#212120" stroke="#6FCF97" stroke-width="3"/>
+        <text x="285" y="500" text-anchor="middle" font-size="96" class="math" fill="#6FCF97">+45</text>
+        <text x="285" y="545" text-anchor="middle" font-size="28" class="grey">µs/day · HEIGHT</text>
+      </g>
+      <g class="sR">
+        <rect x="630" y="390" width="330" height="175" rx="24" fill="#212120" stroke="#7E9BFF" stroke-width="3"/>
+        <text x="795" y="500" text-anchor="middle" font-size="96" class="math" fill="#7E9BFF">−7</text>
+        <text x="795" y="545" text-anchor="middle" font-size="28" class="grey">µs/day · SPEED</text>
+      </g>
+      <text x="540" y="512" text-anchor="middle" font-size="110" class="math f2">−</text>
+      <text x="320" y="790" text-anchor="middle" font-size="120" class="math f1">=</text>
+      <text id="count38" x="480" y="790" text-anchor="middle" font-size="200" class="math breathe">0</text>
+      <text x="615" y="790" font-size="56" class="grey f1">µs / day</text>
+      <g class="f1">
+        <line x1="140" y1="980" x2="940" y2="980" class="thinG"/>
+        <line x1="200" y1="968" x2="200" y2="992" stroke="#9A9A9A" stroke-width="2"/>
+        <line x1="292" y1="968" x2="292" y2="992" stroke="#9A9A9A" stroke-width="2"/>
+        <line x1="788" y1="968" x2="788" y2="992" stroke="#6FCF97" stroke-width="2"/>
+        <line x1="880" y1="968" x2="880" y2="992" stroke="#9A9A9A" stroke-width="2"/>
+        <text x="200" y="1035" text-anchor="middle" font-size="34" class="grey">−7</text>
+        <text x="292" y="1035" text-anchor="middle" font-size="34" class="grey">0</text>
+        <text x="788" y="1035" text-anchor="middle" font-size="34" class="green">+38</text>
+        <text x="880" y="1035" text-anchor="middle" font-size="34" class="grey">+45</text>
+        <text x="140" y="1095" font-size="34" class="grey">µs / day</text>
+      </g>
+      <circle id="marker1" cx="200" cy="980" r="24" fill="#6FCF97"/>
+    </g>
+    <!-- ============ BEAT 2 — PARTS IN A MILLION (8.7–15.87s) ============
+         A dot TRACES the million-line for the full 4s (trace primitive);
+         the callout magnifies the invisible 38 (arrives at 2s). -->
+    <g class="beat" id="b2">
+      <text x="540" y="310" text-anchor="middle" class="eyebrow f1">THIRTY-EIGHT PARTS IN A MILLION</text>
+      <g class="f1">
+        <line x1="100" y1="640" x2="980" y2="640" class="thin drawTrace" pathLength="100"/>
+        <line x1="100" y1="628" x2="100" y2="652" stroke="#9A9A9A" stroke-width="2"/>
+        <line x1="980" y1="628" x2="980" y2="652" stroke="#9A9A9A" stroke-width="2"/>
+        <text x="100" y="700" font-size="40" class="grey">0</text>
+        <text x="980" y="700" text-anchor="end" font-size="40" class="grey">1,000,000</text>
+        <rect x="100" y="632" width="6" height="16" fill="#6FCF97"/>
+      </g>
+      <circle r="12" fill="#6FCF97">
+        <animateMotion id="traceMotion" dur="4s" begin="indefinite" fill="freeze" path="M 100 640 L 980 640"/>
+      </circle>
+      <g class="f2"><g class="breathe">
+        <line x1="106" y1="652" x2="450" y2="820" stroke="#9A9A9A" stroke-width="1.5"/>
+        <line x1="118" y1="652" x2="630" y2="820" stroke="#9A9A9A" stroke-width="1.5"/>
+        <circle cx="540" cy="990" r="190" fill="#141414" stroke="#6FCF97" stroke-width="3"/>
+        <text x="540" y="1010" text-anchor="middle" font-size="150" class="math" fill="#6FCF97">38</text>
+        <text x="540" y="1080" text-anchor="middle" font-size="40" class="grey">of 1,000,000</text>
+      </g></g>
+    </g>
+    <!-- ============ BEAT 3 — PHONE NOTICES (15.87–20.14s, holds the 1.2s gap) ============
+         Clock hand spins the whole beat; minutes count 1→4. -->
+    <g class="beat" id="b3">
+      <text x="540" y="310" text-anchor="middle" class="eyebrow f1">YOUR PHONE WOULD NOTICE</text>
+      <g class="f1">
+        <rect x="210" y="460" width="300" height="580" rx="36" fill="#1A1A1A" stroke="#fff" stroke-width="2"/>
+        <line x1="330" y1="492" x2="390" y2="492" stroke="#9A9A9A" stroke-width="3"/>
+        <line x1="320" y1="1008" x2="400" y2="1008" stroke="#9A9A9A" stroke-width="3"/>
+        <circle cx="360" cy="700" r="140" fill="none" stroke="#fff" stroke-width="2"/>
+        <line x1="360" y1="572" x2="360" y2="592" stroke="#9A9A9A" stroke-width="3"/>
+        <line x1="360" y1="808" x2="360" y2="828" stroke="#9A9A9A" stroke-width="3"/>
+        <line x1="232" y1="700" x2="252" y2="700" stroke="#9A9A9A" stroke-width="3"/>
+        <line x1="468" y1="700" x2="488" y2="700" stroke="#9A9A9A" stroke-width="3"/>
+        <line x1="360" y1="700" x2="360" y2="590" stroke="#6FCF97" stroke-width="5" class="tickhandFast" style="transform-origin:360px 700px"/>
+        <circle cx="360" cy="700" r="8" fill="#6FCF97"/>
+        <text x="360" y="940" text-anchor="middle" font-size="40" class="green f2">+38 µs</text>
+      </g>
+      <text id="countMin" x="820" y="760" text-anchor="middle" font-size="200" class="math">1</text>
+      <text x="820" y="840" text-anchor="middle" font-size="44" class="grey f1">minutes</text>
+    </g>
+    <!-- ============ BEAT 4 — TIME BECOMES DISTANCE (20.14–29.69s) ============
+         MORPH: 38 µs/day leaves as 11 km/day counts in; pin TRAVELS the
+         road while the distance counter runs 0→11 km. -->
+    <g class="beat" id="b4">
+      <text x="540" y="310" text-anchor="middle" class="eyebrow f1">TIME BECOMES DISTANCE</text>
+      <text x="540" y="420" text-anchor="middle" font-size="56" class="grey fadeOut">38 µs / day</text>
+      <text id="count11" x="440" y="680" text-anchor="middle" font-size="300" class="math">0</text>
+      <text x="620" y="680" font-size="72" class="grey f2">km / day</text>
+      <line x1="140" y1="950" x2="940" y2="950" class="thin drawD1" pathLength="100"/>
+      <line id="trail4" x1="140" y1="950" x2="140" y2="950" stroke="#6FCF97" stroke-width="6" stroke-linecap="round"/>
+      <g id="pin4" opacity="0">
+        <circle cx="0" cy="-16" r="24" fill="#6FCF97"/>
+        <path d="M -18 0 L 18 0 L 0 40 Z" fill="#6FCF97"/>
+      </g>
+      <text id="countKm" x="540" y="1060" text-anchor="middle" font-size="54" class="grey">0.0 km</text>
+    </g>
+    <!-- ============ BEAT 5 — A WEEK, WRONG CITY (29.69–36.89s) ============
+         BUILD: 7 day-dots arrive one by one; error counter 11→77 km;
+         pin drops on the wrong block. -->
+    <g class="beat" id="b5">
+      <text x="540" y="310" text-anchor="middle" class="eyebrow f1">LEFT ALONE FOR A WEEK</text>
+      <g class="f1">
+        <rect x="340" y="380" width="400" height="90" rx="24" fill="#212120" stroke="#7E9BFF" stroke-width="3"/>
+        <text x="540" y="442" text-anchor="middle" font-size="54" fill="#fff">≈ 7 miles</text>
+      </g>
+      <g id="dayDots">
+        <g class="dotIn" style="animation-delay:.5s"><circle cx="150" cy="580" r="26" fill="#212120" stroke="#9A9A9A" stroke-width="2"/><text x="150" y="590" text-anchor="middle" font-size="30" class="grey">1</text></g>
+        <g class="dotIn" style="animation-delay:1.2s"><circle cx="280" cy="580" r="26" fill="#212120" stroke="#9A9A9A" stroke-width="2"/><text x="280" y="590" text-anchor="middle" font-size="30" class="grey">2</text></g>
+        <g class="dotIn" style="animation-delay:1.9s"><circle cx="410" cy="580" r="26" fill="#212120" stroke="#9A9A9A" stroke-width="2"/><text x="410" y="590" text-anchor="middle" font-size="30" class="grey">3</text></g>
+        <g class="dotIn" style="animation-delay:2.6s"><circle cx="540" cy="580" r="26" fill="#212120" stroke="#9A9A9A" stroke-width="2"/><text x="540" y="590" text-anchor="middle" font-size="30" class="grey">4</text></g>
+        <g class="dotIn" style="animation-delay:3.3s"><circle cx="670" cy="580" r="26" fill="#212120" stroke="#9A9A9A" stroke-width="2"/><text x="670" y="590" text-anchor="middle" font-size="30" class="grey">5</text></g>
+        <g class="dotIn" style="animation-delay:4.0s"><circle cx="800" cy="580" r="26" fill="#212120" stroke="#9A9A9A" stroke-width="2"/><text x="800" y="590" text-anchor="middle" font-size="30" class="grey">6</text></g>
+        <g class="dotIn" style="animation-delay:4.7s"><circle cx="930" cy="580" r="26" fill="#212120" stroke="#6FCF97" stroke-width="2"/><text x="930" y="590" text-anchor="middle" font-size="30" class="green">7</text></g>
+      </g>
+      <text id="countErr" x="540" y="830" text-anchor="middle" font-size="190" class="math">11 km</text>
+      <text x="540" y="900" text-anchor="middle" font-size="40" class="grey f2">of error after one week</text>
+      <g class="f2">
+        <line x1="300" y1="980" x2="300" y2="1180" stroke="#9A9A9A" stroke-width="1.5"/>
+        <line x1="540" y1="980" x2="540" y2="1180" stroke="#9A9A9A" stroke-width="1.5"/>
+        <line x1="780" y1="980" x2="780" y2="1180" stroke="#9A9A9A" stroke-width="1.5"/>
+        <line x1="200" y1="1040" x2="880" y2="1040" stroke="#9A9A9A" stroke-width="1.5"/>
+        <line x1="200" y1="1120" x2="880" y2="1120" stroke="#9A9A9A" stroke-width="1.5"/>
+        <rect x="330" y="1060" width="46" height="46" fill="#212120" stroke="#9A9A9A" stroke-width="1.5"/>
+        <rect x="570" y="1060" width="46" height="46" fill="#212120" stroke="#9A9A9A" stroke-width="1.5"/>
+        <rect x="450" y="1140" width="46" height="46" fill="#212120" stroke="#9A9A9A" stroke-width="1.5"/>
+        <rect x="690" y="1140" width="46" height="46" fill="#212120" stroke="#9A9A9A" stroke-width="1.5"/>
+      </g>
+      <g class="dropIn" style="animation-delay:2.5s">
+        <circle cx="700" cy="1000" r="16" fill="#6FCF97"/>
+        <path d="M 687 1010 L 713 1010 L 700 1036 Z" fill="#6FCF97"/>
+      </g>
+      <text x="540" y="1240" text-anchor="middle" font-size="44" class="grey f3">wrong city</text>
+    </g>
+    <!-- ============ BEAT 6 — A MONTH, WRONG COUNTRY (36.89–40.54s) ============
+         BUILD: 30 dots in 3 waves; counter 77→330 km; "wrong city" struck
+         through, replaced by "wrong country". Dots are built by JS. -->
+    <g class="beat" id="b6">
+      <text x="540" y="310" text-anchor="middle" class="eyebrow f1">LEFT ALONE FOR A MONTH</text>
+      <g id="monthDots"></g>
+      <text id="countErr2" x="540" y="860" text-anchor="middle" font-size="190" class="math">77 km</text>
+      <text x="540" y="960" text-anchor="middle" font-size="48" class="grey f1">wrong city</text>
+      <line x1="380" y1="955" x2="700" y2="955" stroke="#6FCF97" stroke-width="3" class="draw" pathLength="100" style="animation-delay:1s"/>
+      <text x="540" y="1040" text-anchor="middle" font-size="54" class="green f2">wrong country</text>
+      <line x1="140" y1="1120" x2="940" y2="1120" class="thinG f1"/>
+      <line id="trail6" x1="140" y1="1120" x2="140" y2="1120" stroke="#6FCF97" stroke-width="6" stroke-linecap="round"/>
+      <g id="pin6" opacity="0">
+        <circle cx="0" cy="-16" r="24" fill="#6FCF97"/>
+        <path d="M -18 0 L 18 0 L 0 40 Z" fill="#6FCF97"/>
+      </g>
+    </g>
+    <!-- ============ BEAT 7 — THE LIE + LOOP (40.54–47.568s) ============
+         Giant "11 km / day" restated; at beat-local 5.0s the frame
+         crossfades back to the Beat-1 composition (chips + scale + 38),
+         so the loop restart is a reset of the same picture, not a jump. -->
+    <g class="beat" id="b7">
+      <g id="b7main">
+        <text x="540" y="310" text-anchor="middle" class="eyebrow f1">YOUR PHONE WOULD LIE TO YOU</text>
+        <text x="420" y="700" text-anchor="middle" font-size="300" class="math arrive">11</text>
+        <text x="620" y="700" font-size="84" class="green f2">km / day</text>
+        <text x="540" y="800" text-anchor="middle" font-size="44" class="grey f2">every single day</text>
+        <line x1="140" y1="950" x2="940" y2="950" class="thin draw" pathLength="100"/>
+        <line id="trail7" x1="140" y1="950" x2="140" y2="950" stroke="#6FCF97" stroke-width="6" stroke-linecap="round"/>
+        <g id="pin7" opacity="0">
+          <circle cx="0" cy="-16" r="24" fill="#6FCF97"/>
+          <path d="M -18 0 L 18 0 L 0 40 Z" fill="#6FCF97"/>
+        </g>
+      </g>
+      <g id="b7loop" opacity="0">
+        <text x="540" y="310" text-anchor="middle" class="eyebrow">THE TUG OF WAR</text>
+        <rect x="120" y="400" width="330" height="150" rx="24" fill="#212120" stroke="#6FCF97" stroke-width="3"/>
+        <text x="285" y="505" text-anchor="middle" font-size="96" class="math" fill="#6FCF97">+45</text>
+        <text x="285" y="542" text-anchor="middle" font-size="28" class="grey">µs/day · HEIGHT</text>
+        <rect x="630" y="400" width="330" height="150" rx="24" fill="#212120" stroke="#7E9BFF" stroke-width="3"/>
+        <text x="795" y="505" text-anchor="middle" font-size="96" class="math" fill="#7E9BFF">−7</text>
+        <text x="795" y="542" text-anchor="middle" font-size="28" class="grey">µs/day · SPEED</text>
+        <text x="540" y="512" text-anchor="middle" font-size="110" class="math">−</text>
+        <text x="320" y="790" text-anchor="middle" font-size="120" class="math">=</text>
+        <text x="480" y="790" text-anchor="middle" font-size="200" class="math">38</text>
+        <text x="615" y="790" font-size="56" class="grey">µs / day</text>
+        <line x1="140" y1="980" x2="940" y2="980" stroke="#9A9A9A" stroke-width="2"/>
+        <text x="788" y="1035" text-anchor="middle" font-size="34" class="green">+38</text>
+        <circle cx="788" cy="980" r="24" fill="#6FCF97"/>
+      </g>
+    </g>
+    <!-- Captions: burned in, SVG text, band y 1335–1393 — above the bottom
+         400px safe zone. Driven by the cue list in JS. -->
+    <g id="captionG" opacity="0">
+      <text id="capL1" x="540" y="1335" text-anchor="middle" class="cap"></text>
+      <text id="capL2" x="540" y="1393" text-anchor="middle" class="cap"></text>
+    </g>
+  </svg>
+  </div>
+  <audio id="vo" src="audio.m4a" preload="auto"></audio>
+  <div class="controls">
+    <button id="playBtn">Phát</button>
+    <button id="restartBtn">Xem lại</button>
+    <div class="progress" id="progress"><i id="bar"></i></div>
+    <div class="time" id="time">0:00 / 0:48</div>
+  </div>
+  <p class="hint"><b>GPS Short 1 — Cinematic v2.</b> Vertical-native 1080×1920, no letterbox. Bấm Phát để xem: beat 1 bắt đầu giữa chuyển động (chip trượt vào + số đếm 0→38 + chấm chạy trên thang đo). Đồng hồ cảnh chạy bằng <b>performance.now()</b> — đừng dùng đồng hồ của thẻ &lt;audio&gt;.</p>
+</div>
+<script>
+const BEATS=[
+ {id:'b1',t0:0,dur:8.7},
+ {id:'b2',t0:8.7,dur:7.17},
+ {id:'b3',t0:15.87,dur:4.27},
+ {id:'b4',t0:20.14,dur:9.55},
+ {id:'b5',t0:29.69,dur:7.2},
+ {id:'b6',t0:36.89,dur:3.65},
+ {id:'b7',t0:40.54,dur:7.028},
+];
+const TOTAL=47.568;
+const CAPTIONS=[
+ {t0:0,t1:2.26,lines:["Subtract one from the other,"]},
+ {t0:2.26,t1:7.15,lines:["and the satellite's clock ends up","gaining about thirty-eight"]},
+ {t0:7.15,t1:8.7,lines:["microseconds a day."]},
+ {t0:8.7,t1:11.28,lines:["Thirty-eight parts in a million."]},
+ {t0:11.28,t1:15.87,lines:["A number so small you would never","notice it in your life."]},
+ {t0:15.87,t1:18.94,lines:["Your phone would notice it in","minutes."]},
+ {t0:20.14,t1:22.65,lines:["Turn that time into distance,"]},
+ {t0:22.65,t1:28.28,lines:["and thirty-eight microseconds","becomes about eleven kilometres of"]},
+ {t0:28.28,t1:29.69,lines:["error every day."]},
+ {t0:29.69,t1:33.24,lines:["About seven miles. Left alone for","a week,"]},
+ {t0:33.24,t1:36.89,lines:["your maps would put you in the","wrong city."]},
+ {t0:36.89,t1:40.54,lines:["Left alone for a month, the wrong","country."]},
+ {t0:40.54,t1:45.4,lines:["Your phone would lie to you by","eleven kilometres a day —"]},
+ {t0:45.4,t1:47.57,lines:["unless Einstein saves it."]},
+];
+const easeOut=p=>1-Math.pow(1-p,3);
+const easeInOut=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+const COUNTERS=[
+ {id:'count38',from:0,to:38,t0:0.8,dur:3.0,fmt:v=>String(Math.round(v))},
+ {id:'countMin',from:1,to:4,t0:16.37,dur:3.8,fmt:v=>String(Math.round(v))},
+ {id:'count11',from:0,to:11,t0:20.64,dur:3.0,fmt:v=>String(Math.round(v))},
+ {id:'countKm',from:0,to:11,t0:22.14,dur:7.4,fmt:v=>v.toFixed(1)+' km'},
+ {id:'countErr',from:11,to:77,t0:30.19,dur:6.5,fmt:v=>Math.round(v)+' km'},
+ {id:'countErr2',from:77,to:330,t0:36.89,dur:3.6,fmt:v=>Math.round(v)+' km'},
+];
+// Build the 30 month-dots (10x3 grid, waves at 0/1/2s, last dot mint).
+(function(){
+  const NS='http://www.w3.org/2000/svg', g=document.getElementById('monthDots');
+  for(let r=0;r<3;r++) for(let c=0;c<10;c++){
+    const i=r*10+c, x=140+c*86.67, y=520+r*80;
+    const grp=document.createElementNS(NS,'g');
+    grp.setAttribute('class','dotIn');
+    grp.style.animationDelay=(r*1)+'s';
+    const dot=document.createElementNS(NS,'circle');
+    dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.setAttribute('r',20);
+    dot.setAttribute('fill', i===29?'#6FCF97':'#212120');
+    dot.setAttribute('stroke', i===29?'#6FCF97':'#9A9A9A'); dot.setAttribute('stroke-width',2);
+    grp.appendChild(dot); g.appendChild(grp);
+  }
+})();
+let elapsed=0, playing=false, timer=null, rafId=null, currentIdx=-1, currentCap=-1;
+const capG=document.getElementById('captionG'), capL1=document.getElementById('capL1'), capL2=document.getElementById('capL2'),
+      bar=document.getElementById('bar'), timeEl=document.getElementById('time'), playBtn=document.getElementById('playBtn');
+function fmt(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function showBeat(i){
+  if(i===currentIdx) return;
+  currentIdx=i;
+  BEATS.forEach((b,j)=>document.getElementById(b.id).classList.toggle('active', j===i));
+  if(i===1){ try{ document.getElementById('traceMotion').beginElement(); }catch(e){} }
+  if(i!==6){ // reset the loop-back crossfade when leaving beat 7
+    document.getElementById('b7loop').style.opacity='0';
+    document.getElementById('b7main').style.opacity='1';
+  }
+}
+function showCaption(i){
+  if(i===currentCap) return;
+  currentCap=i;
+  if(i<0){ capG.style.opacity=0; return; }
+  capL1.textContent=CAPTIONS[i].lines[0]||'';
+  capL2.textContent=CAPTIONS[i].lines[1]||'';
+  capG.style.opacity=1;
+}
+function updateMotion(t){
+  // Counters (JS-driven, wall-clock — the count primitive).
+  // LINEAR, not ease-out: an ease-out counter (or pin) decelerates into
+  // its tail and the 1fps frame-diff meter reads the tail as frozen.
+  // A linear count ticks at a constant rate for its whole run.
+  for(const c of COUNTERS){
+    const el=document.getElementById(c.id); if(!el) continue;
+    let v;
+    if(t<c.t0) v=c.from;
+    else if(t>=c.t0+c.dur) v=c.to;
+    else v=c.from+(c.to-c.from)*Math.min(1,(t-c.t0)/c.dur);
+    el.textContent=c.fmt(v);
+  }
+  // B1 marker, ALL LINEAR (no easeInOut anywhere — its slow ends read as
+  // frozen on the 1fps meter): -7 -> +45 (0-5s), +45 -> +38 (5-6.5s),
+  // then a triangle-wave patrol around +38 at constant 82 px/s.
+  const m1=document.getElementById('marker1');
+  if(t>=0 && t<8.7){
+    let x;
+    if(t<5) x=200+680*(t/5);
+    else if(t<6.5) x=880-92*((t-5)/1.5);
+    else { const p=((t-6.5)/2.2)%1; const tri=p<0.25?p*4:p<0.75?2-p*4:p*4-4; x=788+45*tri; }
+    m1.setAttribute('cx', x.toFixed(1));
+  }
+  // B4 pin + mint trail: the pin leaves a trail behind it — the travelled
+  // road turns mint, so the frame keeps changing even though the pin
+  // itself is small. Trail x2 follows the pin exactly.
+  const p4=document.getElementById('pin4'), bl4=t-20.14;
+  if(bl4>=0 && bl4<9.55){
+    if(bl4<2){ p4.setAttribute('opacity','0'); }
+    else { const px=140+800*((bl4-2)/7.55); p4.setAttribute('opacity','1'); p4.setAttribute('transform','translate('+px.toFixed(1)+',950)'); document.getElementById('trail4').setAttribute('x2', px.toFixed(1)); }
+  }
+  // B6 pin + trail: linear travel across the beat.
+  const p6=document.getElementById('pin6'), bl6=t-36.89;
+  if(bl6>=0 && bl6<3.65){ const px=140+800*(bl6/3.6); p6.setAttribute('opacity','1'); p6.setAttribute('transform','translate('+px.toFixed(1)+',1120)'); document.getElementById('trail6').setAttribute('x2', px.toFixed(1)); }
+  // B7 pin + trail + loop-back crossfade at beat-local 5.0s.
+  const p7=document.getElementById('pin7'), bl7=t-40.54;
+  if(bl7>=0 && bl7<7.028){
+    if(bl7<5){ const px=140+800*(bl7/5); p7.setAttribute('opacity','1'); p7.setAttribute('transform','translate('+px.toFixed(1)+',950)'); document.getElementById('trail7').setAttribute('x2', px.toFixed(1)); }
+    if(bl7>=5){
+      document.getElementById('b7loop').style.opacity='1';
+      document.getElementById('b7main').style.opacity='0';
+    }
+  }
+}
+const audioEl=document.getElementById('vo');
+let startPerf=null;
+function tick(){
+  if(startPerf===null) startPerf=performance.now()-elapsed*1000;
+  elapsed=(performance.now()-startPerf)/1000;
+  if(elapsed>=TOTAL){ pause(); elapsed=TOTAL; }
+  const idx=BEATS.findIndex(s=> elapsed>=s.t0 && elapsed < s.t0+s.dur);
+  if(idx>=0) showBeat(idx); // gap between lines: hold the current beat
+  const ci=CAPTIONS.findIndex(c=> elapsed>=c.t0 && elapsed < c.t1);
+  showCaption(ci);
+  updateMotion(elapsed);
+  bar.style.width=(elapsed/TOTAL*100)+'%';
+  timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL);
+}
+function raf(){
+  if(!playing) return;
+  elapsed=(performance.now()-startPerf)/1000;
+  if(elapsed<TOTAL) updateMotion(elapsed);
+  rafId=requestAnimationFrame(raf);
+}
+function play(){
+  if(elapsed>=TOTAL){ elapsed=0; currentIdx=-1; currentCap=-1; }
+  playing=true; playBtn.textContent='Tạm dừng';
+  startPerf=performance.now()-elapsed*1000;
+  timer=setInterval(tick,100);
+  rafId=requestAnimationFrame(raf);
+  if(audioEl){ audioEl.currentTime=elapsed; audioEl.play().catch(()=>{}); }
+}
+function pause(){
+  playing=false; playBtn.textContent='Phát';
+  clearInterval(timer); if(rafId) cancelAnimationFrame(rafId);
+  if(audioEl) audioEl.pause();
+}
+function goTo(t){
+  elapsed=t; startPerf=performance.now()-t*1000;
+  if(audioEl){ audioEl.currentTime=t; if(playing) audioEl.play().catch(()=>{}); }
+  currentIdx=-1; showBeat(BEATS.findIndex(s=> t>=s.t0 && t < s.t0+s.dur));
+  bar.style.width=(elapsed/TOTAL*100)+'%'; timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL);
+}
+playBtn.onclick=()=> playing?pause():play();
+document.getElementById('restartBtn').onclick=()=>{ goTo(0); play(); };
+document.getElementById('progress').onclick=function(e){ const r=this.getBoundingClientRect(); goTo((e.clientX-r.left)/r.width*TOTAL); };
+if(location.hash==='#export'){ document.body.classList.add('export'); }
+// Stage beat 1 at load: its entrance (slide 1.5s / blurFade 1.8s) runs
+// while the page loads, so the first recorded frame is the full
+// composition. play() does NOT reset currentIdx, so the entrance is
+// not re-run at the click — the scene clock and the voice both start
+// at elapsed=0 with the picture already there. (goTo(0) DOES reset
+// currentIdx, so a manual restart re-runs the entrance — correct.)
+showBeat(0);
+timeEl.textContent='0:00 / '+fmt(TOTAL);
+</script>
+</body>
+</html>
