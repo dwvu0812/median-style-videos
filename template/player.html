@@ -38,11 +38,28 @@
   .fillBlue{fill:#5F7FA8}
   .mark{font-size:12px;fill:#9A9A9A}
   /* Entrances: slow blur-in + fade, 1.8s, ease-out cubic-bezier(0.22,1,0.36,1).
-     One element at a time: f1 at 0s, f2 at 1.4s, f3 at 2.8s. Nothing pops. */
+     BUILD stagger f1..f6 at 0/2/4/6/8/10s (v3, 2026-11-28 — research §5.4):
+     a new element every 2s through the WHOLE scene, not just the entrance.
+     Supersedes the old f1/f2/f3 at 0/0.8/1.6s — that front-loaded all
+     motion into the first ~3.4s and left the rest of the scene frozen.
+     For mid-scene builds timed to a spoken phrase, use scenes[].events
+     (see the BUILD clock in the script) instead of a fixed f-class. */
   .active .f1{animation:blurFade 1.8s cubic-bezier(.22,1,.36,1) both}
-  .active .f2{animation:blurFade 1.8s 1.4s cubic-bezier(.22,1,.36,1) both}
-  .active .f3{animation:blurFade 1.8s 2.8s cubic-bezier(.22,1,.36,1) both}
+  .active .f2{animation:blurFade 1.8s 2s cubic-bezier(.22,1,.36,1) both}
+  .active .f3{animation:blurFade 1.8s 4s cubic-bezier(.22,1,.36,1) both}
+  .active .f4{animation:blurFade 1.8s 6s cubic-bezier(.22,1,.36,1) both}
+  .active .f5{animation:blurFade 1.8s 8s cubic-bezier(.22,1,.36,1) both}
+  .active .f6{animation:blurFade 1.8s 10s cubic-bezier(.22,1,.36,1) both}
   @keyframes blurFade{from{opacity:0;filter:blur(8px)}to{opacity:1;filter:blur(0)}}
+  /* WRITE — Manim's signature (research §5.2): the outline draws on, then
+     the fill fades in. Apply ONLY to the one key formula/number per scene,
+     ≥48px display size (smaller text strokes look fuzzy). The element
+     needs pathLength="100" so dasharray 100 means its full outline.
+     Starts at scene activation (.active .write); for a mid-scene Write,
+     put the class on via scenes[].events with cls:'on' (.write.on). */
+  .active .write,.write.on{fill-opacity:0;stroke:#fff;stroke-width:1;stroke-dasharray:100;stroke-dashoffset:100;animation:writeDraw 1.5s ease-in-out forwards,writeFill .6s 1.5s ease-in-out forwards}
+  @keyframes writeDraw{to{stroke-dashoffset:0}}
+  @keyframes writeFill{to{fill-opacity:1}}
   .active .blurIn{animation:blurFade 1.8s cubic-bezier(.22,1,.36,1) both}
   /* Line drawing: 2.5s, ease-in-out. Uses pathLength="100" on the element,
      so dasharray 100 always means the full length, whatever the shape. */
@@ -55,8 +72,11 @@
   @keyframes arriveIn{from{opacity:0;transform:scale(1.06);filter:blur(6px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
   .active .arrive{animation:arriveIn 1.8s cubic-bezier(.22,1,.36,1) both;transform-box:fill-box;transform-origin:center}
   .active .f1.arrive{animation-delay:0s}
-  .active .f2.arrive{animation-delay:1.4s}
-  .active .f3.arrive{animation-delay:2.8s}
+  .active .f2.arrive{animation-delay:2s}
+  .active .f3.arrive{animation-delay:4s}
+  .active .f4.arrive{animation-delay:6s}
+  .active .f5.arrive{animation-delay:8s}
+  .active .f6.arrive{animation-delay:10s}
   /* Continuous motion: gentle breathing, not throbbing. Loops slowed to
      5–6s, smaller amplitude, ease-in-out. Orbits + clock hands stay linear. */
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -81,6 +101,15 @@
   .active .flow{animation:dashFlow 3s ease-in-out infinite}
   .active .growloop{animation:growLoop 6s ease-in-out infinite;transform-box:fill-box;transform-origin:left center}
   .active .sway{animation:sway 8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  /* MORPH — Manim Transform (research §5.1, v3). Shared elements live in
+     ONE persistent <g id="stage"> OUTSIDE the .scene groups, so they
+     survive scene changes; morphTo()/flipMorph()/pathMorph() in the script
+     move them between states. A scene change morphs the current objects
+     into the next state's objects instead of dissolving to a new poster.
+     Keep the 0.45s dissolve ONLY for true chapter boundaries — inside a
+     chapter, morph. .morph elements are JS-driven (rAF), never CSS
+     transitions: do not put a transition on them. */
+  .morph{transition:none}
   .caption{min-height:54px;padding:12px 2px 0;font-size:16px;line-height:1.55;color:#fff;transition:opacity .18s ease}
   .caption b{color:#fff}
   .caption .b{color:#7E9BFF}.caption .g{color:#6FCF97}
@@ -101,9 +130,17 @@
 
   <div class="stage">
   <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+    <!-- MORPH stage (v3): elements that persist across scenes live here,
+         OUTSIDE the .scene groups — e.g. a number that glides from one
+         scene's position to the next, a pin that travels between scenes.
+         morphTo()/flipMorph()/pathMorph() in the script move them; scene
+         groups hold only the elements that belong to one scene. -->
+    <g id="stage"></g>
     <!-- VÍ DỤ cảnh 1 — HOOK: thay bằng cảnh của bạn, giữ id s1, s2, ... theo thứ tự.
-         Dùng class f1/f2/f3 cho từng yếu tố xuất hiện lần lượt (0s / 1.4s / 2.8s),
-         arrive cho khoảnh khắc lớn, draw (+ pathLength="100") cho đường vẽ dần. -->
+         Dùng class f1..f6 cho từng yếu tố xuất hiện lần lượt (0s / 2s / 4s /
+         6s / 8s / 10s — v3 build clock), arrive cho khoảnh khắc lớn,
+         draw (+ pathLength="100") cho đường vẽ dần, write cho công thức
+         chính (≥48px), data-count="from:to:dur" cho số đếm. -->
     <g class="scene" id="s1">
       <g class="f1"><circle cx="400" cy="200" r="110" fill="none" stroke="#9A9A9A" stroke-width="1.5"/>
       <circle cx="400" cy="200" r="78" fill="none" stroke="#9A9A9A" stroke-width="1.5"/></g>
@@ -138,10 +175,122 @@
 <script>
 const scenes=[
  // Điền đủ các cảnh sau khi đo giọng (bước 3): t0/dur lấy từ render_voice.py, cap là caption (giữ số, khác lời thoại đã đánh vần). Video ngắn: 9 cảnh; video dài: ~38 cảnh.
+ // Mỗi cảnh có thể thêm (v3, research §5):
+ //   events:[{t, el, cls, sfx}] — BUILD clock: t = giây trong cảnh; el = id
+ //     phần tử; cls = class thêm vào khi sự kiện tới (vd 'f4', 'on' cho
+ //     .write); sfx = tên SFX trong map (xem playSfx). Cảnh ≥12s phải có ≥4 events.
+ //   zoom:{x,y,w,h,dur,at} — CAMERA push-in: at = giây trong cảnh bắt đầu
+ //     zoom; dur = thời gian zoom (3–5s); tỉ lệ 1.15–1.4×. Một cảnh tính
+ //     toán mới dùng 1 lần. Cảnh không có zoom sẽ trở về full viewBox.
  {t0:0.8,  dur:5.0, cap:"<b>Câu thoại 1.</b> Caption hiện dưới sân khấu."},
  {t0:7.0,  dur:5.0, cap:"Câu thoại 2, với <span class='b'>từ nhấn xanh</span> và <span class='g'>từ nhấn mint</span>."}
  // THÊM CẢNH TẠI ĐÂY: {t0:..., dur:..., cap:"..."}, ... theo thứ tự s1, s2, s3, ...
 ];
+/* ============ v3 MOTION PRIMITIVES (research §5, 2026-11-28) ============ */
+const EASEOUT=p=>1-Math.pow(1-p,3);
+const EASEINOUT=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+/* MORPH — Manim Transform (§5.1). flipMorph(el, applyNew, dur): FLIP —
+   đo bbox cũ (First), applyNew() đặt thuộc tính mới (Last), đảo ngược
+   bằng transform (Invert), animate transform về identity (Play) ~1.2s.
+   applyNew đặt x/y/cx/cy/font-size... — KHÔNG đặt transform attribute:
+   CSS transform sẽ ghi đè nó. Phần tử nào đã có transform attribute thì
+   bọc nó trong <g> rồi FLIP cái <g> đó. */
+function flipMorph(el, applyNew, dur=1200){
+  const oldBox=el.getBBox();
+  applyNew();
+  const newBox=el.getBBox();
+  const dx=oldBox.x-newBox.x, dy=oldBox.y-newBox.y;
+  const sx=(newBox.width>0)?oldBox.width/newBox.width:1, sy=(newBox.height>0)?oldBox.height/newBox.height:1;
+  el.style.transformBox='fill-box'; el.style.transformOrigin='0 0';
+  const anim=el.animate([{transform:`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) scale(${sx.toFixed(3)},${sy.toFixed(3)})`},{transform:'none'}],{duration:dur,easing:'cubic-bezier(0.22,1,0.36,1)',fill:'forwards'});
+  anim.onfinish=()=>{ el.style.transform=''; el.getAnimations().forEach(a=>a.cancel()); };
+  return anim.finished;
+}
+/* pathMorph(pathEl, toD, dur): nội suy đường path — lấy mẫu cả hai path
+   về cùng N điểm (getPointAtLength) rồi nội suy thuộc tính d. Dùng khi
+   hình đổi dạng (tròn → thanh, đường thẳng → đường cong). */
+function samplePath(pathEl,n=64){
+  const L=pathEl.getTotalLength(), pts=[];
+  for(let i=0;i<n;i++){ const p=pathEl.getPointAtLength(L*i/(n-1)); pts.push([p.x,p.y]); }
+  return pts;
+}
+function pathMorph(pathEl, toD, dur=1200){
+  const fromPts=samplePath(pathEl);
+  const NS='http://www.w3.org/2000/svg';
+  const tmp=document.createElementNS(NS,'path'); tmp.setAttribute('d',toD);
+  pathEl.ownerSVGElement.appendChild(tmp);
+  const toPts=samplePath(tmp); tmp.remove();
+  const t0=performance.now();
+  (function step(now){
+    const p=Math.min(1,(now-t0)/dur), e=EASEOUT(p);
+    let d='M '+fromPts.map((f,i)=>{ const t=toPts[i];
+      return (f[0]+(t[0]-f[0])*e).toFixed(1)+' '+(f[1]+(t[1]-f[1])*e).toFixed(1); }).join(' L ');
+    pathEl.setAttribute('d',d);
+    if(p<1) requestAnimationFrame(step); else pathEl.setAttribute('d',toD);
+  })(t0);
+}
+/* ZOOM — camera push-in (§5.3, Manim / Motion Canvas Camera). CSS không
+   transition được viewBox nên làm bằng JS trên đồng hồ wall-clock.
+   zoomTo(x,y,w,h,dur) nội suy 4 số viewBox ease-in-out. showScene áp
+   dụng scenes[].zoom; cảnh không có zoom trở về full viewBox trong 1s. */
+const svgEl=document.querySelector('.stage svg');
+const FULL_VB=svgEl.getAttribute('viewBox').split(' ').map(Number);
+let camAnim=null, zoomFired=false;
+function zoomTo(x,y,w,h,dur=3000){
+  const cur=svgEl.getAttribute('viewBox').split(' ').map(Number);
+  camAnim={from:cur,to:[x,y,w,h],t0:performance.now(),dur};
+}
+function resetZoom(dur=1000){ zoomTo(FULL_VB[0],FULL_VB[1],FULL_VB[2],FULL_VB[3],dur); }
+function applyCam(now){
+  if(!camAnim) return;
+  const p=Math.min(1,(now-camAnim.t0)/camAnim.dur), e=EASEINOUT(p);
+  const v=camAnim.from.map((f,i)=>f+(camAnim.to[i]-f)*e);
+  svgEl.setAttribute('viewBox',v.map(n=>n.toFixed(1)).join(' '));
+  if(p>=1) camAnim=null;
+}
+/* BUILD — event clock (§5.4, Manim self.play sequencing). fireEvents chạy
+   trong tick(): mỗi event của cảnh hiện tại kích hoạt đúng 1 lần khi
+   thời gian-trong-cảnh vượt qua ev.t. */
+let firedEvents=new Set();
+function playSfx(name){ if(window.__sfx && window.__sfx[name]) window.__sfx[name](); }
+function fireEvents(sceneIdx, localT){
+  const evs=(scenes[sceneIdx]&&scenes[sceneIdx].events)||[];
+  evs.forEach((ev,i)=>{
+    const key=sceneIdx+':'+i;
+    if(localT>=ev.t && !firedEvents.has(key)){
+      firedEvents.add(key);
+      const el=document.getElementById(ev.el);
+      if(el && ev.cls) el.classList.add(ev.cls);
+      if(ev.sfx) playSfx(ev.sfx);
+    }
+  });
+}
+/* COUNT — countUp tổng quát (§5.5, Manim ValueTracker). Mọi <text> có
+   data-count="from:to:dur" + data-count-at="giây tuyệt đối bắt đầu đếm"
+   sẽ đếm theo đồng hồ wall-clock khi cảnh của nó đang active.
+   data-fmt: int (mặc định) | 1dp | km | 1dpkm. LINEAR — không ease-out:
+   đuôi ease-out chạy chậm dần và thước 1fps đọc đuôi đó là đóng băng. */
+function fmtCount(el,v){
+  const f=el.dataset.fmt||'int';
+  if(f==='1dp') return v.toFixed(1);
+  if(f==='km') return Math.round(v)+' km';
+  if(f==='1dpkm') return v.toFixed(1)+' km';
+  return String(Math.round(v));
+}
+function updateCounts(t){
+  document.querySelectorAll('[data-count]').forEach(el=>{
+    const scene=el.closest('.scene');
+    if(scene && !scene.classList.contains('active')) return;
+    const parts=el.dataset.count.split(':').map(Number);
+    const from=parts[0], to=parts[1], dur=parts[2]||3;
+    const at=parseFloat(el.dataset.countAt||'0');
+    let v;
+    if(t<at) v=from;
+    else if(t>=at+dur) v=to;
+    else v=from+(to-from)*((t-at)/dur);
+    el.textContent=fmtCount(el,v);
+  });
+}
 const TOTAL=13.2; // = start câu cuối + dur câu cuối (lấy từ bản mix)
 let elapsed=0, playing=false, timer=null, currentIdx=-1;
 const capEl=document.getElementById('caption'), bar=document.getElementById('bar'), timeEl=document.getElementById('time'), playBtn=document.getElementById('playBtn');
@@ -149,14 +298,16 @@ function fmt(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,
 function showScene(i){
   if(i===currentIdx) return;
   currentIdx=i;
+  firedEvents=new Set(); zoomFired=false;
   scenes.forEach((s,j)=>{
     document.getElementById('s'+(j+1)).classList.toggle('active', j===i);
   });
+  // Cảnh không có zoom → trở về full viewBox; cảnh có zoom → tick() sẽ
+  // kích hoạt khi tới scenes[i].zoom.at.
+  if(!scenes[i].zoom) resetZoom(1000);
   capEl.style.opacity=0;
   setTimeout(()=>{ capEl.innerHTML=scenes[i].cap; capEl.style.opacity=1; },180);
 }
-// Ví dụ hiệu ứng đếm số trực tiếp (video 03, cảnh 23: "38" đếm 0→38 trong 3s
-// ease-out) — xem videos/03-gps/animation.html, hàm countUp(), gọi trong showScene.
 const audioEl=document.getElementById('vo');
 let startPerf=null; // wall-clock origin for the scene timer (performance.now)
 function tick(){
@@ -174,6 +325,16 @@ function tick(){
   if(elapsed>=TOTAL){ pause(); elapsed=TOTAL; }
   const idx=scenes.findIndex((s,i)=> elapsed>=s.t0 && elapsed < s.t0+s.dur);
   if(idx>=0) showScene(idx); // khoảng nghỉ giữa 2 câu: GIỮ nguyên cảnh cũ, không nhảy cảnh khác
+  if(currentIdx>=0){
+    const sc=scenes[currentIdx], localT=elapsed-sc.t0;
+    fireEvents(currentIdx, localT); // BUILD clock: sự kiện theo câu nói
+    updateCounts(elapsed); // COUNT: số đếm theo đồng hồ tường
+    if(sc.zoom && !zoomFired && localT>= (sc.zoom.at||0)){
+      zoomFired=true;
+      zoomTo(sc.zoom.x, sc.zoom.y, sc.zoom.w, sc.zoom.h, sc.zoom.dur||3000);
+    }
+  }
+  applyCam(performance.now()); // ZOOM: nội suy viewBox mỗi tick
   bar.style.width=(elapsed/TOTAL*100)+'%';
   timeEl.textContent=fmt(elapsed)+' / '+fmt(TOTAL);
 }
